@@ -1,3 +1,4 @@
+s.boot;
 (
 SynthDef(\moogbass, {
 	arg out = 0, pan = 0, freq = 440, amp = 0.1, gate = 1, cutoff = 1000, gain = 2.0, lagamount = 0.01, att = 0.001, dec = 0.3, sus = 0.9, rel = 0.2, chorus = 0.7;
@@ -48,4 +49,29 @@ SynthDef(\moogbass, {
 
 	Out.ar(out, Pan2.ar(snd, pan));
 }).add;
+)
+
+(
+var bpm = 140;
+t = TempoClock(bpm/60);
+TempoClock.default = t;
+{
+	p = Pbind(
+		\instrument, \moogbass,
+		\midinote, Pseq([24, 36, 48, 36, 35, 36, 48], inf),
+		\dur, Pstutter(8, Pseq([0.5, 0.25], inf)),
+		\gain, 0,
+		\amp, 2,
+		\cutoff, Pn(Pseries(4000, 400, 18), inf),
+		\chorus, 0.7
+	);
+	p.play;
+}.fork(t);
+
+16.wait;
+TempoClock.default.tempo = 1;
+16.wait;
+TempoClock.default.tempo = 3;
+16.wait;
+TempoClock.default.tempo = 2;
 )
