@@ -22,11 +22,12 @@
 
 #pragma once
 
-#include <iostream>
-#include <memory>
-
 #include <spdlog/spdlog.h>
 #include <lo/lo.h>
+
+#include <iostream>
+#include <string>
+#include <memory>
 
 #include "individual.hpp"
 
@@ -45,4 +46,4 @@ class OSC {
     bool isSCReady();
     void setConductor(const Individual& genome);
 };
-}  // end audiogen
+}  // namespace audiogen

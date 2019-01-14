@@ -2,24 +2,29 @@
  * Copyright 2018 Grant Elliott <grant@grantelliott.ca>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to 
- * deal in the Software without restriction, including without limitation the 
- * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or 
- * sell copies of the Software, and to permit persons to whom the Software is 
+ * of this software and associated documentation files (the "Software"), to
+ * deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in 
+ * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL 
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN 
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
 
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <gflags/gflags.h>
+#include <yaml-cpp/yaml.h>
+#include <wiringPiSPI.h>
 
 #include <iostream>
 #include <map>
@@ -30,18 +35,9 @@
 #include <thread>
 #include <csignal>
 
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/basic_file_sink.h>
-#include <gflags/gflags.h>
-#include <yaml-cpp/yaml.h>
-#include <wiringPiSPI.h>
-//#include "RtMidi.h"
-
-#include "midiin.hpp"
 #include "osc.hpp"
 #include "individual.hpp"
 #include "population.hpp"
-#include "fitnesscriteria.hpp"
 
 // Command line argument flags
 DEFINE_string(config, "", "Configuration for the genetics");
@@ -59,7 +55,7 @@ int main(int argc, char* argv[]) {
 
     // read arguments
     gflags::ParseCommandLineFlags(&argc, &argv, true);
-    std::shared_ptr<spdlog::logger> logger;    
+    std::shared_ptr<spdlog::logger> logger;
     try {
         // Initialize logging
         logger = spdlog::basic_logger_st("log", FLAGS_log, true);
@@ -75,7 +71,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     logger->info("Loading config file {}", FLAGS_config);
-    
+
     // load config
     YAML::Node config = YAML::LoadFile(FLAGS_config);
     logger->info("Config loaded: {}", config["name"]);
@@ -88,16 +84,16 @@ int main(int argc, char* argv[]) {
     // Initialize genetics
     YAML::Node genesNode = config["genes"];
     std::vector<std::string> geneKeys;
-    for (auto geneNode: genesNode) {
+    for (auto geneNode : genesNode) {
         geneKeys.emplace_back(geneNode.first.as<std::string>());
     }
-    std::map<std::string, std::map<std::string, std::string>> attributes = genesNode.as<std::map<std::string, std::map<std::string, std::string>>>();
+    std::map<std::string, std::map<std::string, std::string>> attributes =
+        genesNode.as<std::map<std::string, std::map<std::string, std::string>>>();
 
     audiogen::Individual seed(attributes);
-    //audiogen::FitnessCriteria criteria(attributes);
-    audiogen::Population pop(config["populationSize"].as<int>(), seed); 
-    logger->info("Initial population: {}", pop); 
-   
+    audiogen::Population pop(config["populationSize"].as<int>(), seed);
+    logger->info("Initial population: {}", pop);
+
     // initialize input
     std::thread spiListener;
     // Set up SPI
@@ -122,13 +118,12 @@ int main(int argc, char* argv[]) {
                             pop.updateCriterion("tempo");
                         }
                     }
-                } 
+                }
                 sleep(1);
             }
         });
-        //spiListener.join();
     }
-    
+
 
     // Initialize output (OSC -> SuperCollider)
     if (!config["SuperCollider"]) {
@@ -142,7 +137,6 @@ int main(int argc, char* argv[]) {
     // wait for SuperCollider by querying /notify
     // need to set up an OSC server for this
     while (!osc.isSCReady() || stop != 0) {
-        //usleep(5000);  // wait 5ms
         sleep(1);  // wait 1 second
     }
     std::cout << "SC is ready" << std::endl;
@@ -151,7 +145,7 @@ int main(int argc, char* argv[]) {
 
     // Attach population to output
     osc.setConductor(pop.fittest());
-   
+
     uint8_t loops = 16;
     uint8_t i = 0;
     while (i < loops && stop == 0) {
@@ -160,12 +154,12 @@ int main(int argc, char* argv[]) {
         // test new generation
         logger->info("Getting new generation from top {} individuals", topN);
         pop.nextGeneration(topN);
-        logger->info("New population: {}", pop); 
+        logger->info("New population: {}", pop);
         osc.setConductor(pop.fittest());
         sleep(8);
         i++;
     }
-    
+
     stop = 1;
     spiListener.join();
     return 0;

@@ -1,5 +1,5 @@
 set(CMAKE_CXX_STANDARD 14)
-add_executable(audiogen osc.cpp fitnesscriteria.cpp attribute.cpp individual.cpp population.cpp main.cpp)
+add_executable(audiogen osc.cpp attribute.cpp individual.cpp population.cpp main.cpp)
 target_compile_options(audiogen PUBLIC -Wall -Wextra -Wpedantic -Werror -Wno-psabi)
 find_package(gflags REQUIRED)
 find_package(yaml-cpp REQUIRED)

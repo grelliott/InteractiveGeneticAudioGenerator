@@ -2,21 +2,21 @@
  * Copyright 2018 Grant Elliott <grant@grantelliott.ca>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to 
- * deal in the Software without restriction, including without limitation the 
- * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or 
- * sell copies of the Software, and to permit persons to whom the Software is 
+ * of this software and associated documentation files (the "Software"), to
+ * deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in 
+ * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL 
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN 
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
 
@@ -58,7 +58,10 @@ bool OSC::isSCReady() {
         std::cout << "OSC Server Error: num = " << num << " m = " << m << ", path = " << path << std::endl;
     });
 
-    lo_server_thread_add_method(msSt, "/done", "s", [] (const char* path, const char* types, lo_arg** argv, int argc, void* data, void* user_data) -> int {
+    lo_server_thread_add_method(msSt, "/done", "s", [] (const char* path,
+                const char* types,
+                lo_arg** argv, int argc,
+                void* data, void* user_data) -> int {
         (void)path;
         (void)types;
         (void)argv;
@@ -68,11 +71,11 @@ bool OSC::isSCReady() {
         msIsSCReady = true;
         return 1;
     }, nullptr);
-    
+
     lo_server_thread_start(msSt);
 
     lo_send(serverAddr, "/notify", "i", 1);
-    
+
     return false;
 }
 
@@ -80,14 +83,10 @@ void OSC::setConductor(const Individual& conductor) {
     _logger->info("Setting new conductor {}", conductor);
     for (Individual::const_iterator it = conductor.cbegin(); it != conductor.cend(); ++it) {
         lo_send(serverAddr, std::string("/gene/"+it->name()).c_str(), "f", it->expression().current);
-        //send("/main/"+it->name(), "f", it->expression().current);
     }
 }
 
 bool OSC::send(const std::string& path, const std::string& msg) {
-    // add this to construtor, take IP and port as arguments
-    //lo_address t = lo_address_new(nullptr, "57120"); 
-    // sending a string
     lo_send(serverAddr, path.c_str(), "s", msg.c_str());
     return true;
 }

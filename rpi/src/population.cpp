@@ -2,33 +2,33 @@
  * Copyright 2018 Grant Elliott <grant@grantelliott.ca>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to 
- * deal in the Software without restriction, including without limitation the 
- * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or 
- * sell copies of the Software, and to permit persons to whom the Software is 
+ * of this software and associated documentation files (the "Software"), to
+ * deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in 
+ * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL 
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN 
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
 
 #include "population.hpp"
+
+#include <spdlog/spdlog.h>
 
 #include <cstdint>
 #include <iostream>
 #include <random>
 #include <ctime>
 #include <cmath>
-
-#include <spdlog/spdlog.h>
 
 namespace audiogen {
 
@@ -43,18 +43,20 @@ Population::Population(const uint8_t n, const Individual& seed):
     _logger->info("Making {} individuals from {}", n, seed);
     mRng.seed(std::chrono::system_clock::now().time_since_epoch().count());
 
-    //AttributeSorter sorter;
+    // AttributeSorter sorter;
     // go through seed and add to criteria
     Criteria criteria = initializeCriteria(seed);
     mSorter.setCriteria(criteria);
 
     mIndividuals = std::set<Individual, AttributeSorter>(mSorter);
     initializePopulation(seed);
-    
+
     // For cross-breeding, randomly pick each of the attribute's values between two parents
-    // For mutation, determine some threshold for mutations to occur, and some deviation from the current value that a mutation could result it
-    // For criteria, they're a k/v map of attributes and current inputs 
-    // rate-limit how often input buttons can have an effect on the criteria, and how strong an effect it has on moving the criteria
+    // For mutation, determine some threshold for mutations to occur,
+    // and some deviation from the current value that a mutation could result it
+    // For criteria, they're a k/v map of attributes and current inputs
+    // rate-limit how often input buttons can have an effect on the criteria,
+    // and how strong an effect it has on moving the criteria
 }
 
 Population::~Population() {}
@@ -76,7 +78,7 @@ Criteria Population::initializeCriteria(const Individual& seed) {
 
 void Population::updateCriterion(const AttributeName name) {
     _logger->info("+updateCriterion: {}", name);
-    mSorter.updateCriterion(name, true);    
+    mSorter.updateCriterion(name, true);
 }
 
 void Population::initializePopulation(const Individual& seed) {
@@ -134,8 +136,8 @@ Individual Population::breed(std::pair<Individual, Individual> parents) {
         std::string attributeName = parent1.name();
         Expression expression = parent1.expression();
         std::array<decltype(expression.current), 4> intervals {
-            static_cast<decltype(expression.current)>(expression.min), 
-            std::min(parent1.expression().current, parent2.expression().current), 
+            static_cast<decltype(expression.current)>(expression.min),
+            std::min(parent1.expression().current, parent2.expression().current),
             std::max(parent1.expression().current, parent2.expression().current),
             static_cast<decltype(expression.current)>(expression.max)
         };
@@ -154,9 +156,12 @@ Individual Population::breed(std::pair<Individual, Individual> parents) {
         };
 
         // This performs a mutation on the new value
-        //std::normal_distribution<> distribution((parent1.expression().current + parent2.expression().current)/2, std::abs(parent1.expression().current - parent2.expression().current)*2);
-        //std::piecewise_constant_distribution<decltype(expression.current)> distribution(intervals.begin(), intervals.end(), weights.begin());
-        std::piecewise_linear_distribution<decltype(expression.current)> distribution(intervals.begin(), intervals.end(), weights.begin());
+        // std::normal_distribution<> distribution((parent1.expression().current + parent2.expression().current)/2,
+        //         std::abs(parent1.expression().current - parent2.expression().current)*2);
+        // std::piecewise_constant_distribution<decltype(expression.current)> distribution(intervals.begin(),
+        //         intervals.end(), weights.begin());
+        std::piecewise_linear_distribution<decltype(expression.current)> distribution(intervals.begin(),
+                intervals.end(), weights.begin());
 
         expression.current = distribution(mRng);
         if (expression.round) {
@@ -170,19 +175,19 @@ Individual Population::breed(std::pair<Individual, Individual> parents) {
 
 void Population::nextGeneration(const uint8_t n) {
     mGeneration = mGeneration + 1;
-    // copy fittest to temporary 
+    // copy fittest to temporary
     Individuals fittest;
     Individuals::iterator it = mIndividuals.begin();
     std::advance(it, n-1);
     fittest.insert(mIndividuals.begin(), it);
-    
+
     // Remove unfittest
     it = mIndividuals.begin();
     std::advance(it, n);
     for (; it != mIndividuals.end(); ) {
         mIndividuals.erase(it++);
     }
-    
+
     uint8_t maxTries = 8;
     uint8_t tries = 0;
     // add children back in until we have enough
@@ -198,4 +203,4 @@ Individual Population::fittest() {
     return *mIndividuals.begin();
 }
 
-}  // end audiogen
+}  // namespace audiogen
