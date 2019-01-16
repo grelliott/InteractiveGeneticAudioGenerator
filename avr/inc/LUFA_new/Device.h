@@ -50,11 +50,11 @@
 #define __USBDEVICE_H__
 
 	/* Includes: */
-		#include "Common.h"
-		#include "USBMode.h"
-		#include "StdDescriptors.h"
-		#include "USBInterrupt.h"
-		#include "Endpoint.h"
+		#include "LUFA/Common.h"
+		#include "LUFA/USBMode.h"
+		#include "LUFA/StdDescriptors.h"
+		#include "LUFA/USBInterrupt.h"
+		#include "LUFA/Endpoint.h"
 
 	/* Enable C linkage for C++ Compilers: */
 		#if defined(__cplusplus)
@@ -130,17 +130,17 @@
 			 *
 			 *  \return Size in bytes of the descriptor if it exists, zero or \ref NO_DESCRIPTOR otherwise.
 			 */
-			//uint16_t CALLBACK_USB_GetDescriptor(const uint16_t wValue,
-			//                                    const uint16_t wIndex,
-			//                                   const void** const DescriptorAddress
+			uint16_t CALLBACK_USB_GetDescriptor(const uint16_t wValue,
+			                                    const uint16_t wIndex,
+			                                    const void** const DescriptorAddress
 			#if (defined(ARCH_HAS_MULTI_ADDRESS_SPACE) || defined(__DOXYGEN__)) && \
 			    !(defined(USE_FLASH_DESCRIPTORS) || defined(USE_EEPROM_DESCRIPTORS) || defined(USE_RAM_DESCRIPTORS))
-			//                                    , uint8_t* const DescriptorMemorySpace
+			                                    , uint8_t* const DescriptorMemorySpace
 			#endif
-			//                                    ) ATTR_WARN_UNUSED_RESULT ATTR_NON_NULL_PTR_ARG(3);
+			                                    ) ATTR_WARN_UNUSED_RESULT ATTR_NON_NULL_PTR_ARG(3);
 
 	/* Architecture Includes: */
-		#include "Device_AVR8.h"
+		#include "LUFA/Device_AVR8.h"
 
 	/* Disable C linkage for C++ Compilers: */
 		#if defined(__cplusplus)

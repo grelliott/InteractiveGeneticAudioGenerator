@@ -72,9 +72,9 @@
 		#include "CompilerSpecific.h"
 		#include "Attributes.h"
 
-		//#if defined(USE_LUFA_CONFIG_HEADER)
+		#if defined(USE_LUFA_CONFIG_HEADER)
 			#include "LUFAConfig.h"
-		//#endif
+		#endif
 
 	/* Enable C linkage for C++ Compilers: */
 		#if defined(__cplusplus)

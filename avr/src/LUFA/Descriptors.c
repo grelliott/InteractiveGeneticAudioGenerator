@@ -36,6 +36,8 @@
  */
 
 #include "LUFA/Descriptors.h"
+#include "LUFA/Endpoint.h"
+#include "LUFA/Endpoint_AVR8.h"
 
 
 /** Device descriptor structure. This descriptor, located in FLASH memory, describes the overall

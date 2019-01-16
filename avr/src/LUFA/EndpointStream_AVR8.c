@@ -126,7 +126,7 @@ uint8_t Endpoint_Null_Stream(uint16_t Length,
 #define  TEMPLATE_BUFFER_OFFSET(Length)            0
 #define  TEMPLATE_BUFFER_MOVE(BufferPtr, Amount)   BufferPtr += Amount
 #define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         Endpoint_Write_8(*BufferPtr)
-#include "LUFA/Template_Endpoint_RW.c"
+#include "Template_Endpoint_RW.c"
 
 #define  TEMPLATE_FUNC_NAME                        Endpoint_Write_Stream_BE
 #define  TEMPLATE_BUFFER_TYPE                      const void*
@@ -134,7 +134,7 @@ uint8_t Endpoint_Null_Stream(uint16_t Length,
 #define  TEMPLATE_BUFFER_OFFSET(Length)            (Length - 1)
 #define  TEMPLATE_BUFFER_MOVE(BufferPtr, Amount)   BufferPtr -= Amount
 #define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         Endpoint_Write_8(*BufferPtr)
-#include "LUFA/Template_Endpoint_RW.c"
+#include "Template_Endpoint_RW.c"
 
 #define  TEMPLATE_FUNC_NAME                        Endpoint_Read_Stream_LE
 #define  TEMPLATE_BUFFER_TYPE                      void*
@@ -142,7 +142,7 @@ uint8_t Endpoint_Null_Stream(uint16_t Length,
 #define  TEMPLATE_BUFFER_OFFSET(Length)            0
 #define  TEMPLATE_BUFFER_MOVE(BufferPtr, Amount)   BufferPtr += Amount
 #define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         *BufferPtr = Endpoint_Read_8()
-#include "LUFA/Template_Endpoint_RW.c"
+#include "Template_Endpoint_RW.c"
 
 #define  TEMPLATE_FUNC_NAME                        Endpoint_Read_Stream_BE
 #define  TEMPLATE_BUFFER_TYPE                      void*
@@ -150,7 +150,7 @@ uint8_t Endpoint_Null_Stream(uint16_t Length,
 #define  TEMPLATE_BUFFER_OFFSET(Length)            (Length - 1)
 #define  TEMPLATE_BUFFER_MOVE(BufferPtr, Amount)   BufferPtr -= Amount
 #define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         *BufferPtr = Endpoint_Read_8()
-#include "LUFA/Template_Endpoint_RW.c"
+#include "Template_Endpoint_RW.c"
 
 #if defined(ARCH_HAS_FLASH_ADDRESS_SPACE)
 	#define  TEMPLATE_FUNC_NAME                        Endpoint_Write_PStream_LE
@@ -159,7 +159,7 @@ uint8_t Endpoint_Null_Stream(uint16_t Length,
 	#define  TEMPLATE_BUFFER_OFFSET(Length)            0
 	#define  TEMPLATE_BUFFER_MOVE(BufferPtr, Amount)   BufferPtr += Amount
 	#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         Endpoint_Write_8(pgm_read_byte(BufferPtr))
-	#include "LUFA/Template_Endpoint_RW.c"
+	#include "Template_Endpoint_RW.c"
 
 	#define  TEMPLATE_FUNC_NAME                        Endpoint_Write_PStream_BE
 	#define  TEMPLATE_BUFFER_TYPE                      const void*
@@ -167,7 +167,7 @@ uint8_t Endpoint_Null_Stream(uint16_t Length,
 	#define  TEMPLATE_BUFFER_OFFSET(Length)            (Length - 1)
 	#define  TEMPLATE_BUFFER_MOVE(BufferPtr, Amount)   BufferPtr -= Amount
 	#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         Endpoint_Write_8(pgm_read_byte(BufferPtr))
-	#include "LUFA/Template_Endpoint_RW.c"
+	#include "Template_Endpoint_RW.c"
 #endif
 
 #if defined(ARCH_HAS_EEPROM_ADDRESS_SPACE)
@@ -177,7 +177,7 @@ uint8_t Endpoint_Null_Stream(uint16_t Length,
 	#define  TEMPLATE_BUFFER_OFFSET(Length)            0
 	#define  TEMPLATE_BUFFER_MOVE(BufferPtr, Amount)   BufferPtr += Amount
 	#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         Endpoint_Write_8(eeprom_read_byte(BufferPtr))
-	#include "LUFA/Template_Endpoint_RW.c"
+	#include "Template_Endpoint_RW.c"
 
 	#define  TEMPLATE_FUNC_NAME                        Endpoint_Write_EStream_BE
 	#define  TEMPLATE_BUFFER_TYPE                      const void*
@@ -185,7 +185,7 @@ uint8_t Endpoint_Null_Stream(uint16_t Length,
 	#define  TEMPLATE_BUFFER_OFFSET(Length)            (Length - 1)
 	#define  TEMPLATE_BUFFER_MOVE(BufferPtr, Amount)   BufferPtr -= Amount
 	#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         Endpoint_Write_8(eeprom_read_byte(BufferPtr))
-	#include "LUFA/Template_Endpoint_RW.c"
+	#include "Template_Endpoint_RW.c"
 
 	#define  TEMPLATE_FUNC_NAME                        Endpoint_Read_EStream_LE
 	#define  TEMPLATE_BUFFER_TYPE                      void*
@@ -193,7 +193,7 @@ uint8_t Endpoint_Null_Stream(uint16_t Length,
 	#define  TEMPLATE_BUFFER_OFFSET(Length)            0
 	#define  TEMPLATE_BUFFER_MOVE(BufferPtr, Amount)   BufferPtr += Amount
 	#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         eeprom_update_byte(BufferPtr, Endpoint_Read_8())
-	#include "LUFA/Template_Endpoint_RW.c"
+	#include "Template_Endpoint_RW.c"
 
 	#define  TEMPLATE_FUNC_NAME                        Endpoint_Read_EStream_BE
 	#define  TEMPLATE_BUFFER_TYPE                      void*
@@ -201,7 +201,7 @@ uint8_t Endpoint_Null_Stream(uint16_t Length,
 	#define  TEMPLATE_BUFFER_OFFSET(Length)            (Length - 1)
 	#define  TEMPLATE_BUFFER_MOVE(BufferPtr, Amount)   BufferPtr -= Amount
 	#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         eeprom_update_byte(BufferPtr, Endpoint_Read_8())
-	#include "LUFA/Template_Endpoint_RW.c"
+	#include "Template_Endpoint_RW.c"
 #endif
 
 #endif
@@ -210,38 +210,38 @@ uint8_t Endpoint_Null_Stream(uint16_t Length,
 #define  TEMPLATE_BUFFER_OFFSET(Length)            0
 #define  TEMPLATE_BUFFER_MOVE(BufferPtr, Amount)   BufferPtr += Amount
 #define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         Endpoint_Write_8(*BufferPtr)
-#include "LUFA/Template_Endpoint_Control_W.c"
+#include "Template_Endpoint_Control_W.c"
 
 #define  TEMPLATE_FUNC_NAME                        Endpoint_Write_Control_Stream_BE
 #define  TEMPLATE_BUFFER_OFFSET(Length)            (Length - 1)
 #define  TEMPLATE_BUFFER_MOVE(BufferPtr, Amount)   BufferPtr -= Amount
 #define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         Endpoint_Write_8(*BufferPtr)
-#include "LUFA/Template_Endpoint_Control_W.c"
+#include "Template_Endpoint_Control_W.c"
 
 #define  TEMPLATE_FUNC_NAME                        Endpoint_Read_Control_Stream_LE
 #define  TEMPLATE_BUFFER_OFFSET(Length)            0
 #define  TEMPLATE_BUFFER_MOVE(BufferPtr, Amount)   BufferPtr += Amount
 #define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         *BufferPtr = Endpoint_Read_8()
-#include "LUFA/Template_Endpoint_Control_R.c"
+#include "Template_Endpoint_Control_R.c"
 
 #define  TEMPLATE_FUNC_NAME                        Endpoint_Read_Control_Stream_BE
 #define  TEMPLATE_BUFFER_OFFSET(Length)            (Length - 1)
 #define  TEMPLATE_BUFFER_MOVE(BufferPtr, Amount)   BufferPtr -= Amount
 #define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         *BufferPtr = Endpoint_Read_8()
-#include "LUFA/Template_Endpoint_Control_R.c"
+#include "Template_Endpoint_Control_R.c"
 
 #if defined(ARCH_HAS_FLASH_ADDRESS_SPACE)
 	#define  TEMPLATE_FUNC_NAME                        Endpoint_Write_Control_PStream_LE
 	#define  TEMPLATE_BUFFER_OFFSET(Length)            0
 	#define  TEMPLATE_BUFFER_MOVE(BufferPtr, Amount)   BufferPtr += Amount
 	#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         Endpoint_Write_8(pgm_read_byte(BufferPtr))
-	#include "LUFA/Template_Endpoint_Control_W.c"
+	#include "Template_Endpoint_Control_W.c"
 
 	#define  TEMPLATE_FUNC_NAME                        Endpoint_Write_Control_PStream_BE
 	#define  TEMPLATE_BUFFER_OFFSET(Length)            (Length - 1)
 	#define  TEMPLATE_BUFFER_MOVE(BufferPtr, Amount)   BufferPtr -= Amount
 	#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         Endpoint_Write_8(pgm_read_byte(BufferPtr))
-	#include "LUFA/Template_Endpoint_Control_W.c"
+	#include "Template_Endpoint_Control_W.c"
 #endif
 
 #if defined(ARCH_HAS_EEPROM_ADDRESS_SPACE)
@@ -249,25 +249,25 @@ uint8_t Endpoint_Null_Stream(uint16_t Length,
 	#define  TEMPLATE_BUFFER_OFFSET(Length)            0
 	#define  TEMPLATE_BUFFER_MOVE(BufferPtr, Amount)   BufferPtr += Amount
 	#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         Endpoint_Write_8(eeprom_read_byte(BufferPtr))
-	#include "LUFA/Template_Endpoint_Control_W.c"
+	#include "Template_Endpoint_Control_W.c"
 
 	#define  TEMPLATE_FUNC_NAME                        Endpoint_Write_Control_EStream_BE
 	#define  TEMPLATE_BUFFER_OFFSET(Length)            (Length - 1)
 	#define  TEMPLATE_BUFFER_MOVE(BufferPtr, Amount)   BufferPtr -= Amount
 	#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         Endpoint_Write_8(eeprom_read_byte(BufferPtr))
-	#include "LUFA/Template_Endpoint_Control_W.c"
+	#include "Template_Endpoint_Control_W.c"
 
 	#define  TEMPLATE_FUNC_NAME                        Endpoint_Read_Control_EStream_LE
 	#define  TEMPLATE_BUFFER_OFFSET(Length)            0
 	#define  TEMPLATE_BUFFER_MOVE(BufferPtr, Amount)   BufferPtr += Amount
 	#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         eeprom_update_byte(BufferPtr, Endpoint_Read_8())
-	#include "LUFA/Template_Endpoint_Control_R.c"
+	#include "Template_Endpoint_Control_R.c"
 
 	#define  TEMPLATE_FUNC_NAME                        Endpoint_Read_Control_EStream_BE
 	#define  TEMPLATE_BUFFER_OFFSET(Length)            (Length - 1)
 	#define  TEMPLATE_BUFFER_MOVE(BufferPtr, Amount)   BufferPtr -= Amount
 	#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         eeprom_update_byte(BufferPtr, Endpoint_Read_8())
-	#include "LUFA/Template_Endpoint_Control_R.c"
+	#include "Template_Endpoint_Control_R.c"
 #endif
 
 #endif

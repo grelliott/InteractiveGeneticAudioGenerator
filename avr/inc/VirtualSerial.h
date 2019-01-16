@@ -48,10 +48,10 @@
 
 		#include "i2cmaster.h"
 		#include "mcp23017.h"
-		#include "Descriptors.h"
 
-		#include <LUFA/Drivers/Board/LEDs.h>
-		#include <LUFA/Drivers/USB/USB.h>
+        #include "LUFA/Descriptors.h"
+		#include "LUFA/LEDs.h"
+		#include "LUFA/USB.h"
 
 	/* Macros: */
 		/** LED mask for the library LED driver, to indicate that the USB interface is not ready. */

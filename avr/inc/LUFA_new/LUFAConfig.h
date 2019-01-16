@@ -29,39 +29,26 @@
 */
 
 /** \file
- *  \brief USB controller interrupt service routine management.
+ *  \brief LUFA Library Configuration Header File
  *
- *  This file contains definitions required for the correct handling of low level USB service routine interrupts
- *  from the USB controller.
+ *  This header file is used to configure LUFA's compile time options,
+ *  as an alternative to the compile time constants supplied through
+ *  a makefile.
  *
- *  \note This file should not be included directly. It is automatically included as needed by the USB driver
- *        dispatch header located in LUFA/Drivers/USB/USB.h.
+ *  For information on what each token does, refer to the LUFA
+ *  manual section "Summary of Compile Tokens".
  */
 
-#ifndef __USBINTERRUPT_H__
-#define __USBINTERRUPT_H__
+#ifndef _LUFA_CONFIG_H_
+#define _LUFA_CONFIG_H_
 
-	/* Includes: */
-		#include "Common.h"
-		#include "USBMode.h"
+		/* General USB Driver Related Tokens: */
+		#define USE_STATIC_OPTIONS               (USB_DEVICE_OPT_FULLSPEED | USB_OPT_REG_ENABLED | USB_OPT_AUTO_PLL)
+		#define USB_DEVICE_ONLY
 
-	/* Enable C linkage for C++ Compilers: */
-		#if defined(__cplusplus)
-			extern "C" {
-		#endif
-
-	/* Preprocessor Checks: */
-		#if !defined(__INCLUDE_FROM_USB_DRIVER)
-			#error Do not include this file directly. Include LUFA/Drivers/USB/USB.h instead.
-		#endif
-
-	/* Architecture Includes: */
-        #include "USBInterrupt_AVR8.h"
-
-	/* Disable C linkage for C++ Compilers: */
-		#if defined(__cplusplus)
-			}
-		#endif
-
+		/* USB Device Mode Driver Related Tokens: */
+		#define USE_FLASH_DESCRIPTORS
+		#define FIXED_CONTROL_ENDPOINT_SIZE      8
+		#define FIXED_NUM_CONFIGURATIONS         1
+		#define INTERRUPT_CONTROL_ENDPOINT
 #endif
-
