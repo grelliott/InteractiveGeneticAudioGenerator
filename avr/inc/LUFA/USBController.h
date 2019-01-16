@@ -54,7 +54,7 @@
 #include "USBTask.h"
 #include "USBInterrupt.h"
 #include "Device.h"
-#include "Endpoint.h"
+//#include "Endpoint.h"
 #include "DeviceStandardReq.h"
 #include "EndpointStream.h"
 

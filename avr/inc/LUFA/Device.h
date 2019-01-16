@@ -50,11 +50,11 @@
 #define __USBDEVICE_H__
 
 	/* Includes: */
-		#include "Common.h"
-		#include "USBMode.h"
-		#include "StdDescriptors.h"
-		#include "USBInterrupt.h"
-		#include "Endpoint.h"
+		#include "LUFA/Common.h"
+		#include "LUFA/USBMode.h"
+		#include "LUFA/StdDescriptors.h"
+		#include "LUFA/USBInterrupt.h"
+		#include "LUFA/Endpoint.h"
 
 	/* Enable C linkage for C++ Compilers: */
 		#if defined(__cplusplus)
@@ -140,7 +140,7 @@
 			                                    ) ATTR_WARN_UNUSED_RESULT ATTR_NON_NULL_PTR_ARG(3);
 
 	/* Architecture Includes: */
-		#include "AVR8/Device_AVR8.h"
+		#include "LUFA/Device_AVR8.h"
 
 	/* Disable C linkage for C++ Compilers: */
 		#if defined(__cplusplus)

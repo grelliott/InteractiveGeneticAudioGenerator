@@ -72,8 +72,11 @@
 #ifndef __ENDPOINT_H__
 #define __ENDPOINT_H__
 
-#include "Common.h"
-#include "USBMode.h"
+#include "LUFA/Common.h"
+#include "LUFA/USBMode.h"
+//#include "USBController.h"
+#include "LUFA/USBTask.h"
+#include "LUFA/USBInterrupt.h"
 
 	/* Public Interface - May be used in end-application: */
 		/* Type Defines: */
