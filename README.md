@@ -8,12 +8,19 @@ Composed of two primary components: a microcontroller connected to multiple inte
 
 ### Raspberry Pi
 `cd rpi`
+
 `mkdir _install && mkdir _build && cd _build`
+
 `cmake -DCMAKE_INSTALL_PREFIX=../_install ..`
+
 `make`
 
 ### Microcontroller
 `cd avr`
+
 `mkdir _build && cd _build`
+
 `cmake ..`
+
 `make`
+
