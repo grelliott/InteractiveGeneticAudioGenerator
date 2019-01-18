@@ -1,12 +1,4 @@
 /*
-             LUFA Library
-     Copyright (C) Dean Camera, 2017.
-
-  dean [at] fourwalledcubicle [dot] com
-           www.lufa-lib.org
-*/
-
-/*
   Copyright 2017  Dean Camera (dean [at] fourwalledcubicle [dot] com)
 
   Permission to use, copy, modify, distribute, and sell this
@@ -36,51 +28,55 @@
 #ifndef _VIRTUALSERIAL_H_
 #define _VIRTUALSERIAL_H_
 
-	/* Includes: */
-		#include <avr/io.h>
-		#include <avr/wdt.h>
-		#include <avr/power.h>
-		#include <avr/interrupt.h>
-		#include <util/twi.h>
-		#include <util/delay.h>
-		#include <string.h>
-		#include <stdio.h>
+#include <avr/io.h>
+#include <avr/wdt.h>
+#include <avr/power.h>
+#include <avr/interrupt.h>
+#include <util/twi.h>
+#include <util/delay.h>
+#include <string.h>
+#include <stdio.h>
 
-		#include "i2cmaster.h"
-		#include "mcp23017.h"
+#include "i2cmaster.h"
+#include "mcp23017.h"
 
-        #include "LUFA/Descriptors.h"
-		#include "LUFA/LEDs.h"
-		#include "LUFA/USB.h"
+#include "LUFA/Descriptors.h"
+#include "LUFA/LEDs.h"
+#include "LUFA/USB.h"
 
-	/* Macros: */
-		/** LED mask for the library LED driver, to indicate that the USB interface is not ready. */
-		#define LEDMASK_USB_NOTREADY      LEDS_LED1
+#define LED_POWER LEDS_LED1
+#define LED_USB_CONN LEDS_LED2
+#define LED_INPUT LEDS_LED3
 
-		/** LED mask for the library LED driver, to indicate that the USB interface is enumerating. */
-		#define LEDMASK_USB_ENUMERATING  (LEDS_LED2 | LEDS_LED3)
+/** LED mask for the library LED driver, to indicate that the USB interface is not ready. */
+#define LEDMASK_USB_NOTREADY      LED_POWER
 
-		/** LED mask for the library LED driver, to indicate that the USB interface is ready. */
-		#define LEDMASK_USB_READY        (LEDS_LED1 | LEDS_LED2)
+/** LED mask for the library LED driver, to indicate that the USB interface is enumerating. */
+#define LEDMASK_USB_ENUMERATING  LED_POWER
 
-		/** LED mask for the library LED driver, to indicate that an error has occurred in the USB interface. */
-		#define LEDMASK_USB_ERROR        (LEDS_LED1 | LEDS_LED3)
+/** LED mask for the library LED driver, to indicate that the USB interface is ready. */
+#define LEDMASK_USB_READY        (LED_POWER | LED_USB_CONN)
 
-		#define DDR_SPI DDRB
-		#define DD_MISO 3
-		#define MISO PB3
-		#define DD_MOSI 2
-		#define MOSI PB2
-		#define DD_SCK 1
-		#define SCK PB1
-		#define DD_SS 0
-		#define SS   PB0 // active low
-	/* Function Prototypes: */
-		void SetupHardware(void);
+/** LED mask for the library LED driver, to indicate that an error has occurred in the USB interface. */
+#define LEDMASK_USB_ERROR        (LED_POWER | LEDS_LED3)
 
-		void EVENT_USB_Device_Connect(void);
-		void EVENT_USB_Device_Disconnect(void);
-		void EVENT_USB_Device_ConfigurationChanged(void);
-		void EVENT_USB_Device_ControlRequest(void);
+#define DDR_SPI DDRB
+#define DD_MISO 3
+#define MISO PB3
+#define DD_MOSI 2
+#define MOSI PB2
+#define DD_SCK 1
+#define SCK PB1
+#define DD_SS 0
+#define SS   PB0 // active low
+
+unsigned long millis(void);
+
+void SetupHardware(void);
+
+void EVENT_USB_Device_Connect(void);
+void EVENT_USB_Device_Disconnect(void);
+void EVENT_USB_Device_ConfigurationChanged(void);
+void EVENT_USB_Device_ControlRequest(void);
 #endif
 

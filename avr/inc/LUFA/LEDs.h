@@ -110,6 +110,8 @@
 		#define LEDS_LED1        (1 << 5)
 		#define LEDS_LED2        (1 << 6)
 		#define LEDS_LED3        (1 << 7)
+        #define LEDS_POWER       LEDS_1
+        #define LEDS_USB_CONN    LEDS_1
 		#define LEDS_ALL_LEDS    (LEDS_LED1 | LEDS_LED2 | LEDS_LED3)
 		#define LEDS_PORTD_LEDS       LEDS_ALL_LEDS
 		#define LEDS_NO_LEDS     0

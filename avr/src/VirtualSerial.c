@@ -22,6 +22,7 @@
 
 
 #include "VirtualSerial.h"
+#include <util/atomic.h>
 
 USB_ClassInfo_CDC_Device_t VirtualSerial_CDC_Interface = {
     .Config = {
@@ -34,13 +35,13 @@ USB_ClassInfo_CDC_Device_t VirtualSerial_CDC_Interface = {
         .DataOUTEndpoint = {
             .Address = CDC_RX_EPADDR,
             .Size = CDC_TXRX_EPSIZE,
-            .Banks = 1, 
-        }, 
-        .NotificationEndpoint = { 
+            .Banks = 1,
+        },
+        .NotificationEndpoint = {
             .Address = CDC_NOTIFICATION_EPADDR,
-            .Size = CDC_NOTIFICATION_EPSIZE, 
-            .Banks = 1, 
-        }, 
+            .Size = CDC_NOTIFICATION_EPSIZE,
+            .Banks = 1,
+        },
     },
 };
 
@@ -48,6 +49,9 @@ static FILE USBSerialStream;
 static char statusBuffer[1024] = "";
 static bool hostReady = false;
 volatile uint8_t buttons = 0;  // data buffer for sending to SPI
+
+volatile unsigned long milliseconds = 0;
+
 uint8_t ret;
 
 void logStatus(char* msg) {
@@ -64,18 +68,22 @@ int main(void) {
     uint8_t bufLen = 80;
     char buf[bufLen];
 
-
-    logStatus("MIDI Interface started\n\r");
-
     SetupHardware();
+    LEDs_TurnOnLEDs(LED_POWER);
     logStatus("Serial comms initialized\n\r");
+
+    // Set up timer
+    unsigned long CTC_MATCH_OVERFLOW = (F_CPU / 1000) / 8;
+    TCCR1B |= (1 << WGM12) | (1 << CS11);
+    OCR1AH = (CTC_MATCH_OVERFLOW >> 8);
+    OCR1AL = CTC_MATCH_OVERFLOW;
+    TIMSK1 |= (1 << OCIE1A);  // Enable iinterrupt on clock compare
 
     /* Create a regular character stream for the interface so that it can be used with the stdio.h functions */
     CDC_Device_CreateStream(&VirtualSerial_CDC_Interface, &USBSerialStream);
-    LEDs_SetAllLEDs(LEDMASK_USB_NOTREADY);
+
     GlobalInterruptEnable();
 
-#ifdef USE_EXTERNAL_INTERRUPT
     // Set up INT2 (PD2) up as external interrupt
     logStatus("Initializing external interrupt\n\r");
     DDRD |= (1 << PIND2);
@@ -84,7 +92,6 @@ int main(void) {
     EIFR |= (1 << INTF2);
     EICRA |= (1 << ISC21) | (1 << ISC20);
     logStatus("External interrupt initialized\n\r");
-#endif
 
     logStatus("Initializing I2C\n\r");
     i2c_init();
@@ -134,44 +141,37 @@ int main(void) {
     SPCR = (1<<SPE) | (1<<SPIE);
     logStatus("SPI slave initialized\n\r");
 
-
     while (1) {
         /* Must throw away unused bytes from the host, or it will lock up while waiting for the device */
         CDC_Device_ReceiveByte(&VirtualSerial_CDC_Interface);
         CDC_Device_USBTask(&VirtualSerial_CDC_Interface);
         USB_USBTask();
+    }
+}
 
-#ifdef USE_EXTERNAL_INTERRUPT
-    //TODO Use I2C interrupts instead
-    if (ret != 0) {
-        for (int i = 0; i < sizeof(ret)*8; i++) {
+ISR (TIMER1_COMPA_vect) {
+    ++milliseconds;
+}
+
+unsigned long millisElapsed = 0;
+ISR (INT2_vect) {
+    // check debounce
+    if ((milliseconds - millisElapsed) > 50) {
+        millisElapsed += milliseconds;
+        LEDs_TurnOnLEDs(LED_INPUT);
+
+        ret = mcp23017_read_reg(INTCAPA);
+        for (uint8_t i = 0; i < sizeof(ret) * 8; i++) {
             if (ret & 1 << i) {
-                snprintf(buf, bufLen, "Button %d pressed\n\r", i);
                 buttons |= (1 << i);
-                break;
             }
         }
-        logStatus(buf);
-        ret = 0;
-    }
-#else
-        ret = mcp23017_read_reg(GPIOA);
-        if (ret != 0) {
-            snprintf(buf, bufLen, "0x%02x\n\r", ret);
-            logStatus(buf);
-        }
-#endif
-    }
-}
 
-#ifdef USE_EXTERNAL_INTERRUPT
-ISR (INT2_vect) {
-    // we received an interrupt from the MCP23017
-    ret = mcp23017_read_reg(INTCAPA);
+        LEDs_TurnOffLEDs(LED_INPUT);
+        EIFR |= (1 << INTF2);
+    }
     // re-enable interrupt
-    EIFR |= (1 << INTF2);
 }
-#endif
 
 ISR (SPI_STC_vect) {
     uint8_t command;
@@ -210,8 +210,7 @@ void EVENT_USB_Device_Disconnect(void) {
 
 /** Event handler for the library USB Configuration Changed event. */
 void EVENT_USB_Device_ConfigurationChanged(void) {
-    bool ConfigSuccess = true;
-    ConfigSuccess &= CDC_Device_ConfigureEndpoints(&VirtualSerial_CDC_Interface);
+    bool ConfigSuccess = CDC_Device_ConfigureEndpoints(&VirtualSerial_CDC_Interface);
     LEDs_SetAllLEDs(ConfigSuccess ? LEDMASK_USB_READY : LEDMASK_USB_ERROR);
 }
 
