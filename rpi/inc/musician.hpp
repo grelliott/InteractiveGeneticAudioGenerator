@@ -24,7 +24,7 @@
 
 #include "instructions.hpp"
 
-namespace audiogen {
+namespace audiogene {
 class Musician: {
  public:
  	Musician();

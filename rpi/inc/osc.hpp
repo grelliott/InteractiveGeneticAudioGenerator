@@ -30,9 +30,10 @@
 #include <memory>
 
 #include "musician.hpp"
+#include "instruction.hpp"
 #include "individual.hpp"
 
-namespace audiogen {
+namespace audiogene {
 
 class OSC: public Musician {
     static bool msIsSCReady;
@@ -50,4 +51,4 @@ class OSC: public Musician {
     void receiveInstructions(const Instructions& instructions) final;
     void setConductor(const Individual& conductor) final;
 };
-}  // namespace audiogen
+}  // namespace audiogene

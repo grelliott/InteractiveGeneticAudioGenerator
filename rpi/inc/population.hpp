@@ -34,16 +34,19 @@
 
 #include "individual.hpp"
 
-namespace audiogen {
+namespace audiogene {
 
-// These are preferences
+// This is a preference
 struct Criterion {
     double min;
     double max;
     double current;
 };
+// These are preferences
 typedef std::map<AttributeName, Criterion> Criteria;
 
+// Individuals are sorted based on how closely their instructions match the current preferences
+// So when the audience updates a preference,
 class AttributeSorter {
     Criteria mCriteria;
 
@@ -55,6 +58,11 @@ class AttributeSorter {
         return mCriteria[name].current;
     }
 
+    // This is what gets called through main's input
+    // It's taking in a preference that the audience is giving
+    // This is then used to order the individuals
+    // In the next generation, the individuals that most fit the overall preferences
+    // will reproduce. The fittest of that will conduct the music for some period of time
     void updateCriterion(const AttributeName& name, bool increase) {
         Criterion c = mCriteria[name];
         if (increase) {
@@ -127,4 +135,4 @@ class Population {
     Individual fittest();
 };
 
-}  // namespace audiogen
+}  // namespace audiogene

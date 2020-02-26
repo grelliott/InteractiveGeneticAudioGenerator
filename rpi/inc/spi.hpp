@@ -26,7 +26,7 @@
 
 #include "audience.hpp"
 
-namespace audiogen {
+namespace audiogene {
 
 class SPI: public Audience {
 	std::shared_ptr<spdlog::logger> _logger;
@@ -42,4 +42,4 @@ public:
 
 };
 
-}  // namespace audiogen
+}  // namespace audiogene

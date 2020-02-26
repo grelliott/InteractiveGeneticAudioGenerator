@@ -26,7 +26,7 @@
 namespace audiogene {
 
 class Preferences {
-	// a collection of preference
+	// a collection of preferences
 };
 
 }  // namespace audiogene

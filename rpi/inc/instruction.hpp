@@ -29,7 +29,8 @@
 #include "spdlog/spdlog.h"
 #include "spdlog/fmt/ostr.h"
 
-namespace audiogen {
+namespace audiogene {
+
 enum class ExpressionActivates {
     OnBar,  //!< Make the change on the next bar
     OverBar  //!< Gradually make the change over the next bar
@@ -67,5 +68,5 @@ class Instruction {
     }
 };
 
-}  // namespace audiogen
+}  // namespace audiogene
 

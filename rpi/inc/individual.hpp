@@ -33,7 +33,7 @@
 #include "conductor.hpp"
 #include "instruction.hpp"
 
-namespace audiogen {
+namespace audiogene {
 
 // replace with Instructions
 //typedef typename std::vector<Attribute> Attributes;
@@ -70,4 +70,4 @@ class Individual: public Conductor {
     }
 };
 
-}  // namespace audiogen
+}  // namespace audiogene
