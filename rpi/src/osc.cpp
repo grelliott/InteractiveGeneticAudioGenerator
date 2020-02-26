@@ -41,6 +41,15 @@ OSC::OSC(const std::string& serverIp, const std::string& serverPort):
 
 OSC::~OSC() {}
 
+void OSC::prepare() {
+	//TODO can we listen for something instead of polling outself?
+	// wait for SuperCollider by querying /notify
+    // need to set up an OSC server for this
+    while (!isSCReady()) {
+        sleep(1);  // wait 1 second
+    }
+}
+
 bool OSC::isSCReady() {
     if (msIsSCReady) {
         if (msSt) {
@@ -77,6 +86,10 @@ bool OSC::isSCReady() {
     lo_send(serverAddr, "/notify", "i", 1);
 
     return false;
+}
+
+void OSC::receiveInstructions(const Instructions& instructions) {
+	// instructions should contain a bunch of attributes and values
 }
 
 void OSC::setConductor(const Individual& conductor) {

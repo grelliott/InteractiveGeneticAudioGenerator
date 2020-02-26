@@ -22,32 +22,16 @@
 
 #pragma once
 
-#include <spdlog/spdlog.h>
-#include <lo/lo.h>
+#include "preference.hpp"
 
-#include <iostream>
-#include <string>
-#include <memory>
+namespace audiogene {
 
-#include "musician.hpp"
-#include "individual.hpp"
+class Audience {
 
-namespace audiogen {
-
-class OSC: public Musician {
-    static bool msIsSCReady;
-    static lo_server_thread msSt;
-    const lo_address serverAddr;
-    std::shared_ptr<spdlog::logger> _logger;
-
-    bool isSCReady();
-    bool send(const std::string& path, const std::string& msg);
- public:
-    OSC() final;
-    OSC(const std::string& serverIp, const std::string& serverPort);
-    ~OSC() final;
-    void prepare() final;
-    void receiveInstructions(const Instructions& instructions) final;
-    void setConductor(const Individual& conductor) final;
+public:
+	virtual ~Audience() = 0;
+	virtual prepare() = 0;
+	virtual void preferenceUpdated(const Preference& preference) = 0;
 };
-}  // namespace audiogen
+
+}  // namespace audiogene

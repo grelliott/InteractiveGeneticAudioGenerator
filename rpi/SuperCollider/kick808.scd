@@ -16,12 +16,45 @@ SynthDef(\kick808, {
 }).add;
 )
 
-// (
-// Pbind(
-// 	\instrument, \kick808,
-// 	\dur, 1/2,
-// 	\amp, 0.5,
-// 	\rel, 0.7,
-// 	\dist, 0.5
-// ).play;
-// )
+
+(
+Pbind(
+	\instrument, \kick808,
+	\dur, 1/2,
+	\amp, 0.8,
+ 	\rel, 0.4,
+	\dist, 0.7
+).play;
+)
+
+/*
+create new environment
+
+Effects
+delay and echo filters
+
+synths
+ klank, klang, PMOsc
+ GrainBuf
+Envelopes
+
+Mix down multiple ugens to mono or stereo
+
+Controls
+- control busses? Maybe to manipulate behaviour of several synths, set core frequency?
+- could be done with groups as well
+- maybe sensors that manipulate sound output based on where users are
+- BeatTrack?
+
+Streams, events
+
+scope, plot, record
+*/
+
+(
+f = {};
+f.scope
+)
+
+{ PinkNoise.ar(0.2) + SinOsc.ar(440, 0, 0.2) + Saw.ar(660, 0.2) }.scope;
+{ PinkNoise.ar(0.2) + Saw.ar(660, 0.2)}.scope;

@@ -94,64 +94,92 @@ int main(int argc, char* argv[]) {
     audiogen::Population pop(config["populationSize"].as<int>(), seed);
     logger->info("Initial population: {}", pop);
 
-    // initialize input
-    std::thread spiListener;
-    // Set up SPI
-    int spiFd = wiringPiSPISetup(0, 500000);
-    if (spiFd == -1) {
-        logger->warn("Failed to connect to SPI");
-    } else {
-        // make a new thread to listen to SPI
-        spiListener = std::thread([&logger, &pop] () {
-            unsigned char buf[2];
-            memset(buf, 0, 2);
-            buf[0] = 0x80;
-            while (stop == 0) {
-                buf[0] = 0x80;
-                wiringPiSPIDataRW(0, buf, 1);
-                if (buf[0] != 0) {
-                    unsigned char data = buf[0];
-                    // loop through bits to see which are set
-                    for (size_t i = 0; i < sizeof(data) * 8; i++) {
-                        if (data & 1 << i) {
-                            logger->info("Received data from controller {}", i);
-                            pop.updateCriterion("tempo");
-                        }
-                    }
-                }
-                sleep(1);
-            }
-        });
-    }
+    //TODO don't fix input to a given protocol
+    // Consider consuming MIDI and mapping that to each attribute
+    // use an interface an instance of an input needs to honour
+
+    // The input is from an audience
+    // So we want an audience to guide the presentation
+    // An audience gives feedback on various criteria
+    // The population takes that feedback and determines which of its individuals best represent that feedback
+    // and the next attempt tries to meet these expectations
 
 
-    // Initialize output (OSC -> SuperCollider)
+    //Audience audience = Midi();
+
+
+	Audience audience = SPI();
+	audience.prepare();
+    // pop.onPreferencesUpdated(audience.preferencesUpdated());
+
+
+    // // initialize input
+    // std::thread spiListener;
+    // // Set up SPI
+    // int spiFd = wiringPiSPISetup(0, 500000);
+    // if (spiFd == -1) {
+    //     logger->warn("Failed to connect to SPI");
+    // } else {
+    //     // make a new thread to listen to SPI
+    //     spiListener = std::thread([&logger, &pop] () {
+    //         unsigned char buf[2];
+    //         memset(buf, 0, 2);
+    //         buf[0] = 0x80;
+    //         while (stop == 0) {
+    //             buf[0] = 0x80;
+    //             wiringPiSPIDataRW(0, buf, 1);
+    //             if (buf[0] != 0) {
+    //                 unsigned char data = buf[0];
+    //                 // loop through bits to see which are set
+    //                 for (size_t i = 0; i < sizeof(data) * 8; i++) {
+    //                     if (data & 1 << i) {
+    //                         logger->info("Received data from controller {}", i);
+    //                         pop.updateCriterion("tempo");
+    //                     }
+    //                 }
+    //             }
+    //             sleep(1);
+    //         }
+    //     });
+    // }
+
+
+   	//TODO don't fix output to a specific protocol
+    // We're trying to "conduct" an audio performance
+    // by telling it how to play
+    // The conductor is the most suitable individual from the current generation
+    // it will them tell the audio player the criteria to use for playing
+
+
+   	// Initialize output (OSC -> SuperCollider)
     if (!config["SuperCollider"]) {
         std::cout << "Missing SuperCollider config" << std::endl;
         return -1;
     }
     YAML::Node scNode = config["SuperCollider"];
     std::cout << "Initializing OSC" << std::endl;
-    audiogen::OSC osc = audiogen::OSC(scNode["addr"].as<std::string>(), scNode["port"].as<std::string>());
+    Musician musician = audiogen::OSC(scNode["addr"].as<std::string>(), scNode["port"].as<std::string>());
 
-    // wait for SuperCollider by querying /notify
-    // need to set up an OSC server for this
-    while (!osc.isSCReady() || stop != 0) {
-        sleep(1);  // wait 1 second
-    }
-    std::cout << "SC is ready" << std::endl;
+    // // wait for SuperCollider by querying /notify
+    // // need to set up an OSC server for this
+    // while (!osc.isSCReady() || stop != 0) {
+    //     sleep(1);  // wait 1 second
+    // }
+    musician.prepare();
+	std::cout << "SC is ready" << std::endl;
 
-    // Use streams to link Population and OSC
+    //TODO Use streams to link Population and OSC
 
     // Attach population to output
-    osc.setConductor(pop.fittest());
+    Individual conductor = pop.fittest();
+    musician.readInstructions(conductor.instructions());
 
+    // Run the thing
     uint8_t loops = 16;
+    uint8_t topN = config["keepFittest"].as<int>();
     uint8_t i = 0;
     while (i < loops && stop == 0) {
         std::cout << "loop " << +i << std::endl;
-        uint8_t topN = config["keepFittest"].as<int>();
-        // test new generation
         logger->info("Getting new generation from top {} individuals", topN);
         pop.nextGeneration(topN);
         logger->info("New population: {}", pop);

@@ -20,41 +20,39 @@
  * THE SOFTWARE.
  */
 
-#include "attribute.hpp"
+#include "instruction.hpp"
 
 namespace audiogen {
 
-Attribute::Attribute() {}
+Instruction::Instruction() {}
 
-Attribute::Attribute(AttributeName name, Expression expression, uint8_t generation) :
+Instruction::Instruction(AttributeName name, Expression expression) :
     mName(name),
-    mExpression(expression),
-    mGeneration(generation) {
+    mExpression(expression) {
 }
 
-Attribute::Attribute(AttributeName name, std::map<std::string, std::string> expression, uint8_t generation) :
-    mName(name),
-    mGeneration(generation) {
-        mExpression = {};
-        mExpression.min = std::stoi(expression["min"]);
-        mExpression.max = std::stoi(expression["max"]);
-        mExpression.current = std::stoi(expression["current"]);
-        mExpression.round = expression["round"] == "true";
+Instruction::Instruction(AttributeName name, std::map<std::string, std::string> expression) :
+		mName(name) {
+    mExpression = {};
+    mExpression.min = std::stoi(expression["min"]);
+    mExpression.max = std::stoi(expression["max"]);
+    mExpression.current = std::stoi(expression["current"]);
+    mExpression.round = expression["round"] == "true";
 
-        if (expression["activates"] == "OnBar") {
-            mExpression.activates = ExpressionActivates::OnBar;
-        } else if (expression["activates"] == "OverBar") {
-            mExpression.activates = ExpressionActivates::OverBar;
-        } else {
-            mExpression.activates = ExpressionActivates::OnBar;
-        }
+    if (expression["activates"] == "OnBar") {
+        mExpression.activates = ExpressionActivates::OnBar;
+    } else if (expression["activates"] == "OverBar") {
+        mExpression.activates = ExpressionActivates::OverBar;
+    } else {
+        mExpression.activates = ExpressionActivates::OnBar;
     }
+}
 
-AttributeName Attribute::name() const {
+AttributeName Instruction::name() const {
     return mName;
 }
 
-Expression Attribute::expression() const {
+Expression Instruction::expression() const {
     return mExpression;
 }
 

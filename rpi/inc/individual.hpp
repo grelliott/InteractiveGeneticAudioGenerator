@@ -30,36 +30,42 @@
 #include <string>
 #include <map>
 
-#include "attribute.hpp"
+#include "conductor.hpp"
+#include "instruction.hpp"
 
 namespace audiogen {
 
-typedef typename std::vector<Attribute> Attributes;
-class Individual {
+// replace with Instructions
+//typedef typename std::vector<Attribute> Attributes;
+
+class Individual: public Conductor {
     std::shared_ptr<spdlog::logger> _logger;
-    Attributes mAttributes;
+    Istructions mInstructions;
 
  public:
     Individual();
-    explicit Individual(const std::map<std::string, std::map<std::string, std::string>> attributes);
-    explicit Individual(const Attributes attributes);
+    //explicit Individual(const std::map<std::string, std::map<std::string, std::string>> instructions);
+    explicit Individual(const Instructions instructions) final;
     ~Individual() {}
 
-    Attribute getAttribute(const std::string& name) const;
-    typedef typename Attributes::iterator iterator;
-    typedef typename Attributes::const_iterator const_iterator;
-    inline iterator begin() noexcept { return mAttributes.begin(); }
-    inline const_iterator cbegin() const noexcept { return mAttributes.cbegin(); }
-    inline iterator end() noexcept { return mAttributes.end(); }
-    inline const_iterator cend() const noexcept { return mAttributes.cend(); }
-    inline uint8_t size() const noexcept { return mAttributes.size(); }
+    Instructions giveInstructions() final;
+    // replace with instructions
+    //Attribute getAttribute(const std::string& name) const;
+
+    // typedef typename Attributes::iterator iterator;
+    // typedef typename Attributes::const_iterator const_iterator;
+    // inline iterator begin() noexcept { return mAttributes.begin(); }
+    // inline const_iterator cbegin() const noexcept { return mAttributes.cbegin(); }
+    // inline iterator end() noexcept { return mAttributes.end(); }
+    // inline const_iterator cend() const noexcept { return mAttributes.cend(); }
+    // inline uint8_t size() const noexcept { return mAttributes.size(); }
 
     template<typename OStream>
     friend OStream &operator<<(OStream &os, const Individual &obj) {
         os << "Individual \n";
-        for (const Attribute &attribute : obj.mAttributes) {
-            os << "\t" << attribute << "\n";
-        }
+        // for (const Attribute &attribute : obj.mAttributes) {
+        //     os << "\t" << attribute << "\n";
+        // }
         return os;
     }
 };

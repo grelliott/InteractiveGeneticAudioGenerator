@@ -20,34 +20,15 @@
  * THE SOFTWARE.
  */
 
+
 #pragma once
 
-#include <spdlog/spdlog.h>
-#include <lo/lo.h>
+namespace audiogene {
 
-#include <iostream>
-#include <string>
-#include <memory>
-
-#include "musician.hpp"
-#include "individual.hpp"
-
-namespace audiogen {
-
-class OSC: public Musician {
-    static bool msIsSCReady;
-    static lo_server_thread msSt;
-    const lo_address serverAddr;
-    std::shared_ptr<spdlog::logger> _logger;
-
-    bool isSCReady();
-    bool send(const std::string& path, const std::string& msg);
- public:
-    OSC() final;
-    OSC(const std::string& serverIp, const std::string& serverPort);
-    ~OSC() final;
-    void prepare() final;
-    void receiveInstructions(const Instructions& instructions) final;
-    void setConductor(const Individual& conductor) final;
+class Preference {
+	double min;
+    double max;
+    double current;
 };
-}  // namespace audiogen
+
+}  // namespace audiogene

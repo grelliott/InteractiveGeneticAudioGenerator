@@ -36,6 +36,7 @@
 
 namespace audiogen {
 
+// These are preferences
 struct Criterion {
     double min;
     double max;
@@ -109,7 +110,7 @@ class Population {
  public:
     Population();
     Population(const uint8_t n, const Individual& seed);
-    ~Population();
+    ~Population() {};
 
     template<typename OStream>
     friend OStream &operator<<(OStream &os, const Population &obj) {

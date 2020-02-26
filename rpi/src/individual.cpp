@@ -56,4 +56,10 @@ Attribute Individual::getAttribute(const std::string& name) const {
     return Attribute();
 }
 
+Instructions Individual::giveInstructions() {
+	// perhaps stream something?
+	// Either way, give instructions to musician
+	return mInstructions;
+}
+
 }  // namespace audiogen

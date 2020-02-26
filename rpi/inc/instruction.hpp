@@ -22,32 +22,50 @@
 
 #pragma once
 
-#include <spdlog/spdlog.h>
-#include <lo/lo.h>
-
-#include <iostream>
+#include <cstdint>
+#include <map>
 #include <string>
-#include <memory>
 
-#include "musician.hpp"
-#include "individual.hpp"
+#include "spdlog/spdlog.h"
+#include "spdlog/fmt/ostr.h"
 
 namespace audiogen {
-
-class OSC: public Musician {
-    static bool msIsSCReady;
-    static lo_server_thread msSt;
-    const lo_address serverAddr;
-    std::shared_ptr<spdlog::logger> _logger;
-
-    bool isSCReady();
-    bool send(const std::string& path, const std::string& msg);
- public:
-    OSC() final;
-    OSC(const std::string& serverIp, const std::string& serverPort);
-    ~OSC() final;
-    void prepare() final;
-    void receiveInstructions(const Instructions& instructions) final;
-    void setConductor(const Individual& conductor) final;
+enum class ExpressionActivates {
+    OnBar,  //!< Make the change on the next bar
+    OverBar  //!< Gradually make the change over the next bar
 };
+
+struct Expression {
+    uint32_t min;
+    uint32_t max;
+    double current;
+    bool round;
+    ExpressionActivates activates;
+
+    template<typename OStream>
+    friend OStream &operator<<(OStream &os, const Expression &obj) {
+        return os << "current: " << obj.current << ", min: " << obj.min << ", max: " << obj.max;
+    }
+};
+typedef std::string AttributeName;
+
+class Instruction {
+    AttributeName mName;
+    Expression mExpression;
+ public:
+    Instruction();
+    Instruction(AttributeName name, std::map<std::string, std::string> expression);
+    Instruction(AttributeName name, Expression expression);
+    ~Instruction() {}
+
+    AttributeName name() const;
+    Expression expression() const;
+
+    template<typename OStream>
+    friend OStream &operator<<(OStream &os, const Instruction &obj) {
+        return os << "Instruction " << obj.mName <<  ": " << obj.mExpression;
+    }
+};
+
 }  // namespace audiogen
+

@@ -140,6 +140,8 @@ s.waitForBoot({
 		Out.ar(out, sig);
 	}).add;
 
+	// add delay
+	// add limiter
 	SynthDef(\reverb, {
 		arg in=~bus[\reverbBus], predelay=0.1, revtime=1.8,
 		lpf=4500, mix=0.15, amp=1, out=~out;

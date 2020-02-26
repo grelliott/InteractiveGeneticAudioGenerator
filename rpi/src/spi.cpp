@@ -20,34 +20,56 @@
  * THE SOFTWARE.
  */
 
-#pragma once
-
-#include <spdlog/spdlog.h>
-#include <lo/lo.h>
-
-#include <iostream>
-#include <string>
-#include <memory>
-
-#include "musician.hpp"
-#include "individual.hpp"
+#include "spi.hpp"
 
 namespace audiogen {
 
-class OSC: public Musician {
-    static bool msIsSCReady;
-    static lo_server_thread msSt;
-    const lo_address serverAddr;
-    std::shared_ptr<spdlog::logger> _logger;
+SPI::SPI() {
+	_logger = spdlog::get("log");
+}
 
-    bool isSCReady();
-    bool send(const std::string& path, const std::string& msg);
- public:
-    OSC() final;
-    OSC(const std::string& serverIp, const std::string& serverPort);
-    ~OSC() final;
-    void prepare() final;
-    void receiveInstructions(const Instructions& instructions) final;
-    void setConductor(const Individual& conductor) final;
-};
-}  // namespace audiogen
+SPI::~SPI() {
+
+}
+
+void SPI::prepare() {
+	// std::thread spiListener; //member
+    // Set up SPI
+    int spiFd = wiringPiSPISetup(0, 500000);
+    if (spiFd == -1) {
+        _logger->warn("Failed to connect to SPI");
+    } else {
+        // make a new thread to listen to SPI
+        spiListenerThread = std::thread(listener);
+
+    }
+}
+
+void SPI::listener() {
+    unsigned char buf[2];
+    memset(buf, 0, 2);
+    buf[0] = 0x80;
+    // main loop
+    while (stop == 0) {
+        buf[0] = 0x80;
+        wiringPiSPIDataRW(0, buf, 1);
+        if (buf[0] != 0) {
+            unsigned char data = buf[0];
+            // loop through bits to see which are set
+            for (size_t i = 0; i < sizeof(data) * 8; i++) {
+                if (data & 1 << i) {
+                    _logger->info("Received data from controller {}", i);
+                    preferenceUpdated("tempo");
+                }
+            }
+        }
+        sleep(1);
+    }
+
+}
+
+void SPI::preferenceUpdated(const Preference& preference) {
+
+}
+
+}
