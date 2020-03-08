@@ -23,41 +23,44 @@
 #pragma once
 
 #include "instruction.hpp"
+
 /*
  * Instructions define the way the music should be played.
  *
  */
 namespace audiogene {
 
-class Instructions {
-	std::vector<Instruction> mInstructions;
+using Instructions = std::vector<Instruction>;
 
- public:
- 	Instructions();
- 	~Instructions() {}
- 	explicit Instructions(const std::map<std::string, std::map<std::string, std::string>> instructions)
- 	// some way for conductor to set
- 	// some way for musician to read
+// class Instructions {
+// 	std::vector<Instruction> mInstructions;
 
- 	// provide stream?
+//  public:
+//  	Instructions();
+//  	~Instructions() {}
+//  	explicit Instructions(const std::map<std::string, std::map<std::string, std::string>> instructions);
+//  	// some way for conductor to set
+//  	// some way for musician to read
 
- 	// Provide Iterator interface
-    typedef typename Instructions::iterator iterator;
-    typedef typename Instructions::const_iterator const_iterator;
-    inline iterator begin() noexcept { return mInstructions.begin(); }
-    inline const_iterator cbegin() const noexcept { return mInstructions.cbegin(); }
-    inline iterator end() noexcept { return mInstructions.end(); }
-    inline const_iterator cend() const noexcept { return mInstructions.cend(); }
-    inline uint8_t size() const noexcept { return mInstructions.size(); }
+//  	// provide stream?
 
-    template<typename OStream>
-    friend OStream &operator<<(OStream &os, const Instructions &obj) {
-        os << "Instructions: \n";
-        for (const Instruction &instruction : obj.mInstructions) {
-            os << "\t" << instruction << "\n";
-        }
-        return os;
-    }
-};
+//  	// Provide Iterator interface
+//     typedef typename std::vector<Instruction>::iterator iterator;
+//     typedef typename std::vector<Instruction>::const_iterator const_iterator;
+//     inline iterator begin() noexcept { return mInstructions.begin(); }
+//     inline const_iterator cbegin() const noexcept { return mInstructions.cbegin(); }
+//     inline iterator end() noexcept { return mInstructions.end(); }
+//     inline const_iterator cend() const noexcept { return mInstructions.cend(); }
+//     inline uint8_t size() const noexcept { return mInstructions.size(); }
+
+//     template<typename OStream>
+//     friend OStream &operator<<(OStream &os, const Instructions &obj) {
+//         os << "Instructions: \n";
+//         for (const Instruction &instruction : obj.mInstructions) {
+//             os << "\t" << instruction << "\n";
+//         }
+//         return os;
+//     }
+// };
 
 }  // namespace audiogene

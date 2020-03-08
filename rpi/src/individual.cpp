@@ -29,37 +29,35 @@
 #include <map>
 #include <string>
 
-namespace audiogen {
+namespace audiogene {
 
 Individual::Individual() {}
 
-Individual::Individual(const Attributes attributes):
-    mAttributes(attributes) {}
-
-Individual::Individual(const std::map<std::string, std::map<std::string, std::string>> attributes) {
-    _logger = spdlog::get("log");
-    std::map<std::string, std::map<std::string, std::string>>::const_iterator it;
-    // make attributes
-    for (it = attributes.begin(); it != attributes.end(); ++it) {
-        std::string name = it->first;
-        std::map<std::string, std::string> expression = it->second;
-        mAttributes.push_back(Attribute(name, expression, 0));
-    }
+Individual::Individual(const std::map<std::string, std::map<std::string, std::string>> instructions) {
+	// make instructions!
+	(void)instructions;
 }
 
-Attribute Individual::getAttribute(const std::string& name) const {
-    for (const Attribute& attribute : mAttributes) {
-        if (attribute.name() == name) {
-            return attribute;
+//TODO this all needs changing
+Individual::Individual(const Instructions instructions):
+    mInstructions(instructions) {}
+
+Instruction Individual::instruction(const std::string& name) const {
+    for (const Instruction& instruction : mInstructions) {
+        if (instruction.name() == name) {
+            return instruction;
         }
     }
-    return Attribute();
+    return Instruction();
 }
+/*
 
-Instructions Individual::giveInstructions() {
+*/
+
+Instructions Individual::giveInstructions() const {
 	// perhaps stream something?
 	// Either way, give instructions to musician
 	return mInstructions;
 }
 
-}  // namespace audiogen
+}  // namespace audiogene

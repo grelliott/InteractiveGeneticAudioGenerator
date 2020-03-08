@@ -24,10 +24,11 @@
 #include <spdlog/sinks/basic_file_sink.h>
 #include <gflags/gflags.h>
 #include <yaml-cpp/yaml.h>
-#include <wiringPiSPI.h>
+//#include <wiringPiSPI.h>
 
 #include <iostream>
 #include <map>
+#include <memory>
 #include <cstdlib>
 #include <string>
 #include <vector>
@@ -36,8 +37,11 @@
 #include <csignal>
 
 #include "osc.hpp"
+#include "spi.hpp"
 #include "individual.hpp"
+#include "musician.hpp"
 #include "population.hpp"
+#include "audience.hpp"
 
 // Command line argument flags
 DEFINE_string(config, "", "Configuration for the genetics");
@@ -90,8 +94,8 @@ int main(int argc, char* argv[]) {
     std::map<std::string, std::map<std::string, std::string>> attributes =
         genesNode.as<std::map<std::string, std::map<std::string, std::string>>>();
 
-    audiogen::Individual seed(attributes);
-    audiogen::Population pop(config["populationSize"].as<int>(), seed);
+    audiogene::Individual seed(attributes);
+    audiogene::Population pop(config["populationSize"].as<int>(), seed);
     logger->info("Initial population: {}", pop);
 
     //TODO don't fix input to a given protocol
@@ -108,8 +112,8 @@ int main(int argc, char* argv[]) {
     //Audience audience = Midi();
 
 
-	Audience audience = SPI();
-	audience.prepare();
+	std::unique_ptr<audiogene::Audience> audience(new audiogene::SPI());
+	audience->prepare();
     // pop.onPreferencesUpdated(audience.preferencesUpdated());
 
 
@@ -158,21 +162,21 @@ int main(int argc, char* argv[]) {
     }
     YAML::Node scNode = config["SuperCollider"];
     std::cout << "Initializing OSC" << std::endl;
-    Musician musician = audiogen::OSC(scNode["addr"].as<std::string>(), scNode["port"].as<std::string>());
+    std::unique_ptr<audiogene::Musician> musician(new audiogene::OSC(scNode["addr"].as<std::string>(), scNode["port"].as<std::string>()));
 
     // // wait for SuperCollider by querying /notify
     // // need to set up an OSC server for this
     // while (!osc.isSCReady() || stop != 0) {
     //     sleep(1);  // wait 1 second
     // }
-    musician.prepare();
+    musician->prepare();
 	std::cout << "SC is ready" << std::endl;
 
     //TODO Use streams to link Population and OSC
 
     // Attach population to output
-    Individual conductor = pop.fittest();
-    musician.readInstructions(conductor.instructions());
+    audiogene::Individual conductor = pop.fittest();
+    musician->receiveInstructions(conductor.giveInstructions());
 
     // Run the thing
     uint8_t loops = 16;
@@ -183,12 +187,12 @@ int main(int argc, char* argv[]) {
         logger->info("Getting new generation from top {} individuals", topN);
         pop.nextGeneration(topN);
         logger->info("New population: {}", pop);
-        osc.setConductor(pop.fittest());
+        musician->setConductor(pop.fittest());
         sleep(8);
         i++;
     }
 
     stop = 1;
-    spiListener.join();
+    //spiListener.join();
     return 0;
 }

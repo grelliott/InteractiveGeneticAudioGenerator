@@ -118,7 +118,7 @@ class Population {
  public:
     Population();
     Population(const uint8_t n, const Individual& seed);
-    ~Population() {};
+    ~Population() = default;
 
     template<typename OStream>
     friend OStream &operator<<(OStream &os, const Population &obj) {

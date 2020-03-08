@@ -22,7 +22,7 @@
 
 #include "instruction.hpp"
 
-namespace audiogen {
+namespace audiogene {
 
 Instruction::Instruction() {}
 
@@ -56,4 +56,4 @@ Expression Instruction::expression() const {
     return mExpression;
 }
 
-}  // namespace audiogen
+}  // namespace audiogene

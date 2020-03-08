@@ -23,14 +23,14 @@
 #pragma once
 
 #include "instructions.hpp"
+#include "individual.hpp"
 
 namespace audiogene {
-class Musician: {
+class Musician {
  public:
- 	Musician();
-	virtual ~Musician() = delete;
 	virtual void prepare() = 0;
 	virtual void receiveInstructions(const Instructions& instructions) = 0;
+    virtual void setConductor(const Individual& conductor) = 0;
 };
 
 }  // namespace audiogene

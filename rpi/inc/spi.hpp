@@ -35,10 +35,10 @@ class SPI: public Audience {
 	void listener();
 public:
 	SPI();
-	virtual ~SPI();
+	~SPI() = default;
 
-	void prepare() final;
-	void preferenceUpdated(const Preference& preference) final;
+	void prepare() override;
+	void preferenceUpdated(const Preference& preference) override;
 
 };
 

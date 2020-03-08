@@ -22,14 +22,14 @@
 
 #include "spi.hpp"
 
-namespace audiogen {
+#include <wiringPiSPI.h>
+
+#include <functional>
+
+namespace audiogene {
 
 SPI::SPI() {
 	_logger = spdlog::get("log");
-}
-
-SPI::~SPI() {
-
 }
 
 void SPI::prepare() {
@@ -40,7 +40,7 @@ void SPI::prepare() {
         _logger->warn("Failed to connect to SPI");
     } else {
         // make a new thread to listen to SPI
-        spiListenerThread = std::thread(listener);
+        spiListenerThread = std::thread(std::bind(&SPI::listener, this));
 
     }
 }
@@ -49,6 +49,8 @@ void SPI::listener() {
     unsigned char buf[2];
     memset(buf, 0, 2);
     buf[0] = 0x80;
+    // TODO change to some broadcast mechanism
+    int stop = 0;
     // main loop
     while (stop == 0) {
         buf[0] = 0x80;
@@ -59,7 +61,8 @@ void SPI::listener() {
             for (size_t i = 0; i < sizeof(data) * 8; i++) {
                 if (data & 1 << i) {
                     _logger->info("Received data from controller {}", i);
-                    preferenceUpdated("tempo");
+                    //TODO actually determine which preference was updated and update
+                    preferenceUpdated({});
                 }
             }
         }
@@ -69,7 +72,9 @@ void SPI::listener() {
 }
 
 void SPI::preferenceUpdated(const Preference& preference) {
-
+    (void)preference;
+    //TODO actually do something with the updated preference
+    // This is the audience, so it should notify the conductors somehow
 }
 
-}
+}  // namespace audiogene

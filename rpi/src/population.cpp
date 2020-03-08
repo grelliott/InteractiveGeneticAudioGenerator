@@ -30,7 +30,7 @@
 #include <ctime>
 #include <cmath>
 
-namespace audiogen {
+namespace audiogene {
 
 Population::Population():
     mSize(0),
@@ -59,8 +59,6 @@ Population::Population(const uint8_t n, const Individual& seed):
     // and how strong an effect it has on moving the criteria
 }
 
-Population::~Population() {}
-
 Criteria Population::initializeCriteria(const Individual& seed) {
     Criteria criteria;
     for (Individual::const_iterator it = seed.cbegin(); it != seed.cend(); ++it) {
@@ -84,7 +82,7 @@ void Population::updateCriterion(const AttributeName name) {
 void Population::initializePopulation(const Individual& seed) {
     // we need to make mSize copies of seed and put them into the collection of Individuals
     for (int i = 0; i < mSize; i++) {
-        Attributes newAttributes = {};
+        Instructions newInstructions = {};
         // Go through each Attribute in the seed and determine a new value based on a random standard deviation
         for (Individual::const_iterator it = seed.cbegin(); it != seed.cend(); ++it) {
             std::string name(it->name());
@@ -98,9 +96,9 @@ void Population::initializePopulation(const Individual& seed) {
                 v = std::round(v);
             }
             expression.current = v;
-            newAttributes.emplace_back(Attribute(name, expression, mGeneration));
+            newInstructions.emplace_back(Instruction(name, expression));
         }
-        mIndividuals.insert(Individual(newAttributes));
+        mIndividuals.insert(Individual(newInstructions));
     }
 }
 
@@ -124,15 +122,15 @@ std::pair<Individual, Individual> Population::getParents(Individuals fittest) {
 }
 
 Individual Population::breed(std::pair<Individual, Individual> parents) {
-    Attributes attributes;
+    Instructions instructions;
 
     // Go through each attribute, flip a coin, and pick one or the other and give one to the child
     // Or determine some new value based on the two of the parents
     // For now, go basic and just pick one
 
     for (Individual::const_iterator it = parents.first.cbegin(); it != parents.first.cend(); ++it) {
-        const Attribute parent1 = *it;
-        const Attribute parent2 = parents.second.getAttribute(parent1.name());
+        const Instruction parent1 = *it;
+        const Instruction parent2 = parents.second.instruction(parent1.name());
         std::string attributeName = parent1.name();
         Expression expression = parent1.expression();
         std::array<decltype(expression.current), 4> intervals {
@@ -167,10 +165,10 @@ Individual Population::breed(std::pair<Individual, Individual> parents) {
         if (expression.round) {
             expression.current = std::round(expression.current);
         }
-        Attribute newAttribute(attributeName, expression, mGeneration);
-        attributes.emplace_back(newAttribute);
+        Instruction newInstruction(attributeName, expression);
+        instructions.emplace_back(newInstruction);
     }
-    return Individual(attributes);
+    return Individual(instructions);
 }
 
 void Population::nextGeneration(const uint8_t n) {
@@ -203,4 +201,4 @@ Individual Population::fittest() {
     return *mIndividuals.begin();
 }
 
-}  // namespace audiogen
+}  // namespace audiogene

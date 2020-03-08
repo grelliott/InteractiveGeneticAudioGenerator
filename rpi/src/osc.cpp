@@ -25,7 +25,7 @@
 #include <spdlog/spdlog.h>
 #include <lo/lo.h>
 
-namespace audiogen {
+namespace audiogene {
 
 bool OSC::msIsSCReady = false;
 lo_server_thread OSC::msSt = nullptr;
@@ -39,7 +39,8 @@ OSC::OSC(const std::string& serverIp, const std::string& serverPort):
         _logger->info("OSC Initialized. {}:{}", serverIp, serverPort);
 }
 
-OSC::~OSC() {}
+// TODO maybe we should disconnect from the server first?
+//OSC::~OSC() {}
 
 void OSC::prepare() {
 	//TODO can we listen for something instead of polling outself?
@@ -90,11 +91,12 @@ bool OSC::isSCReady() {
 
 void OSC::receiveInstructions(const Instructions& instructions) {
 	// instructions should contain a bunch of attributes and values
+    (void)instructions;
 }
 
 void OSC::setConductor(const Individual& conductor) {
     _logger->info("Setting new conductor {}", conductor);
-    for (Individual::const_iterator it = conductor.cbegin(); it != conductor.cend(); ++it) {
+    for (Instructions::const_iterator it = conductor.giveInstructions().cbegin(); it != conductor.giveInstructions().cend(); ++it) {
         lo_send(serverAddr, std::string("/gene/"+it->name()).c_str(), "f", it->expression().current);
     }
 }
@@ -104,4 +106,4 @@ bool OSC::send(const std::string& path, const std::string& msg) {
     return true;
 }
 
-}  // namespace audiogen
+}  // namespace audiogene

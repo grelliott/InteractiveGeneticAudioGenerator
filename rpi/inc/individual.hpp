@@ -40,28 +40,30 @@ namespace audiogene {
 
 class Individual: public Conductor {
     std::shared_ptr<spdlog::logger> _logger;
-    Istructions mInstructions;
+    Instructions mInstructions;
 
  public:
     Individual();
-    //explicit Individual(const std::map<std::string, std::map<std::string, std::string>> instructions);
-    explicit Individual(const Instructions instructions) final;
+    /*! Create an individual from config values */
+    explicit Individual(const std::map<std::string, std::map<std::string, std::string>> instructions);
+    explicit Individual(const Instructions instructions);
     ~Individual() {}
 
-    Instructions giveInstructions() final;
+    Instructions giveInstructions() const final;
     // replace with instructions
-    //Attribute getAttribute(const std::string& name) const;
+    Instruction instruction(const std::string& name) const;
 
-    // typedef typename Attributes::iterator iterator;
-    // typedef typename Attributes::const_iterator const_iterator;
-    // inline iterator begin() noexcept { return mAttributes.begin(); }
-    // inline const_iterator cbegin() const noexcept { return mAttributes.cbegin(); }
-    // inline iterator end() noexcept { return mAttributes.end(); }
-    // inline const_iterator cend() const noexcept { return mAttributes.cend(); }
-    // inline uint8_t size() const noexcept { return mAttributes.size(); }
+    typedef typename Instructions::iterator iterator;
+    typedef typename Instructions::const_iterator const_iterator;
+    inline iterator begin() noexcept { return mInstructions.begin(); }
+    inline const_iterator cbegin() const noexcept { return mInstructions.cbegin(); }
+    inline iterator end() noexcept { return mInstructions.end(); }
+    inline const_iterator cend() const noexcept { return mInstructions.cend(); }
+    inline uint8_t size() const noexcept { return mInstructions.size(); }
 
     template<typename OStream>
     friend OStream &operator<<(OStream &os, const Individual &obj) {
+        (void)obj;  //TODO print out individual stuff
         os << "Individual \n";
         // for (const Attribute &attribute : obj.mAttributes) {
         //     os << "\t" << attribute << "\n";

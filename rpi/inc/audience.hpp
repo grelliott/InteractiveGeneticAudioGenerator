@@ -29,8 +29,7 @@ namespace audiogene {
 class Audience {
 
 public:
-	virtual ~Audience() = 0;
-	virtual prepare() = 0;
+	virtual void prepare() = 0;
 	virtual void preferenceUpdated(const Preference& preference) = 0;
 };
 

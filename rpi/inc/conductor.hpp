@@ -27,9 +27,9 @@
 namespace audiogene {
 class Conductor {
  public:
- 	virtual Conductor(Instructions instructions) = 0;
+    //Conductor(Instructions instructions) = default;
  	virtual ~Conductor() {}
- 	virtual Instructions giveInstructions() = 0;
+ 	virtual Instructions giveInstructions() const = 0;
 };
 
 }  // namespace audiogene
