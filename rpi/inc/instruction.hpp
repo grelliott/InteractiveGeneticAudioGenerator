@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <map>
+#include <vector>
 #include <string>
 
 #include "spdlog/spdlog.h"
@@ -57,7 +58,7 @@ class Instruction {
     Instruction();
     Instruction(AttributeName name, std::map<std::string, std::string> expression);
     Instruction(AttributeName name, Expression expression);
-    ~Instruction() {}
+    ~Instruction() = default;
 
     AttributeName name() const;
     Expression expression() const;
@@ -67,6 +68,8 @@ class Instruction {
         return os << "Instruction " << obj.mName <<  ": " << obj.mExpression;
     }
 };
+
+using Instructions = std::vector<Instruction>;
 
 }  // namespace audiogene
 

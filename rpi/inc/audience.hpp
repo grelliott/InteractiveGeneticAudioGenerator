@@ -27,10 +27,13 @@
 namespace audiogene {
 
 class Audience {
+protected:
+	Preferences mPreferences;
 
 public:
 	virtual void prepare() = 0;
 	virtual void preferenceUpdated(const Preference& preference) = 0;
+	virtual Preferences preferences() = 0;
 };
 
 }  // namespace audiogene

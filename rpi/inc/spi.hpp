@@ -25,13 +25,14 @@
 #include <spdlog/spdlog.h>
 
 #include "audience.hpp"
+#include "preference.hpp"
 
 namespace audiogene {
 
 class SPI: public Audience {
 	std::shared_ptr<spdlog::logger> _logger;
 	std::thread spiListenerThread;
-	// Preferences preferences;
+	Preferences mPreferences;
 	void listener();
 public:
 	SPI();
@@ -39,7 +40,7 @@ public:
 
 	void prepare() override;
 	void preferenceUpdated(const Preference& preference) override;
-
+	Preferences preferences() override;
 };
 
 }  // namespace audiogene

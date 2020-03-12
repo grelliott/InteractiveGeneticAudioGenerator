@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "instructions.hpp"
+#include "instruction.hpp"
 #include "individual.hpp"
 
 namespace audiogene {

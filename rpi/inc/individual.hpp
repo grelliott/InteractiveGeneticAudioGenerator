@@ -49,17 +49,19 @@ class Individual: public Conductor {
     explicit Individual(const Instructions instructions);
     ~Individual() {}
 
-    Instructions giveInstructions() const final;
+    Instructions instructions() const final;
     // replace with instructions
     Instruction instruction(const std::string& name) const;
 
-    typedef typename Instructions::iterator iterator;
-    typedef typename Instructions::const_iterator const_iterator;
-    inline iterator begin() noexcept { return mInstructions.begin(); }
-    inline const_iterator cbegin() const noexcept { return mInstructions.cbegin(); }
-    inline iterator end() noexcept { return mInstructions.end(); }
-    inline const_iterator cend() const noexcept { return mInstructions.cend(); }
-    inline uint8_t size() const noexcept { return mInstructions.size(); }
+    // Not quite sure why an individual implements an iterator for instructions...
+    //TODO remove
+    // typedef typename Instructions::iterator iterator;
+    // typedef typename Instructions::const_iterator const_iterator;
+    // inline iterator begin() noexcept { return mInstructions.begin(); }
+    // inline const_iterator cbegin() const noexcept { return mInstructions.cbegin(); }
+    // inline iterator end() noexcept { return mInstructions.end(); }
+    // inline const_iterator cend() const noexcept { return mInstructions.cend(); }
+    // inline uint8_t size() const noexcept { return mInstructions.size(); }
 
     template<typename OStream>
     friend OStream &operator<<(OStream &os, const Individual &obj) {

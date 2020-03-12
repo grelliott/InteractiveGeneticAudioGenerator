@@ -32,23 +32,15 @@
 
 namespace audiogene {
 
-Population::Population():
-    mSize(0),
-    mGeneration(0) {}
-
-Population::Population(const uint8_t n, const Individual& seed):
-    mSize(n),
-    mGeneration(0) {
-    _logger = spdlog::get("log");
-    _logger->info("Making {} individuals from {}", n, seed);
+Population::Population(const uint8_t n, const Individual& seed, const std::shared_ptr<Audience> audience):
+	    _logger(spdlog::get("log")),
+	    mSize(n),
+	    mGeneration(0),
+	    mAudience(audience) {
+	_logger->info("Initializing RNG");
     mRng.seed(std::chrono::system_clock::now().time_since_epoch().count());
 
-    // AttributeSorter sorter;
-    // go through seed and add to criteria
-    Criteria criteria = initializeCriteria(seed);
-    mSorter.setCriteria(criteria);
-
-    mIndividuals = std::set<Individual, AttributeSorter>(mSorter);
+	_logger->info("Making {} individuals from {}", n, seed);
     initializePopulation(seed);
 
     // For cross-breeding, randomly pick each of the attribute's values between two parents
@@ -59,34 +51,19 @@ Population::Population(const uint8_t n, const Individual& seed):
     // and how strong an effect it has on moving the criteria
 }
 
-Criteria Population::initializeCriteria(const Individual& seed) {
-    Criteria criteria;
-    for (Individual::const_iterator it = seed.cbegin(); it != seed.cend(); ++it) {
-        std::string name(it->name());
-        Expression expression(it->expression());
-        Criterion criterion {};
-        criterion.min = expression.min;
-        criterion.max = expression.max;
-        criterion.current = expression.current;
-        criteria[name] = criterion;
-    }
-    return criteria;
-}
-
-
-void Population::updateCriterion(const AttributeName name) {
-    _logger->info("+updateCriterion: {}", name);
-    mSorter.updateCriterion(name, true);
-}
-
 void Population::initializePopulation(const Individual& seed) {
     // we need to make mSize copies of seed and put them into the collection of Individuals
     for (int i = 0; i < mSize; i++) {
         Instructions newInstructions = {};
-        // Go through each Attribute in the seed and determine a new value based on a random standard deviation
-        for (Individual::const_iterator it = seed.cbegin(); it != seed.cend(); ++it) {
+        // Go through each Preference in the seed and determine a new value based on a random standard deviation
+        //TODO change this from iterating on the seed to the seed's instructions
+        for (Instructions::const_iterator it = seed.instructions().cbegin(); it != seed.instructions().cend(); ++it) {
+        	// The seed's instruction
             std::string name(it->name());
             Expression expression(it->expression());
+            // this can be pulled out into a new method
+            // it's getting a new expression over a distribution
+            //
             std::normal_distribution<> d(expression.current, 5);
             double v;
             do {
@@ -98,8 +75,32 @@ void Population::initializePopulation(const Individual& seed) {
             expression.current = v;
             newInstructions.emplace_back(Instruction(name, expression));
         }
-        mIndividuals.insert(Individual(newInstructions));
+        mIndividuals.emplace_back(Individual(newInstructions));
     }
+}
+
+void Population::sortPopulation() {
+	std::sort(mIndividuals.begin(), mIndividuals.end(), [&] (const Individual& lhs, const Individual& rhs) -> bool {
+        float lhsSimilarity = 0;
+        float rhsSimilarity = 0;
+        const uint8_t instructionCount = lhs.instructions().size();
+        // Calculate lhs
+        for (Instructions::const_iterator it = lhs.instructions().cbegin(); it != lhs.instructions().cend(); ++it) {
+            const double curVal = it->expression().current;
+            const double ideal = mAudience->preferences()[it->name()].current;
+            float sim = 1 - (std::abs(ideal - curVal)) / (it->expression().max - it->expression().min);
+            lhsSimilarity += sim;
+        }
+        // Calculate rhs
+        for (Instructions::const_iterator it = rhs.instructions().cbegin(); it != rhs.instructions().cend(); ++it) {
+            const double curVal = it->expression().current;
+            const double ideal = mAudience->preferences()[it->name()].current;
+            float sim = 1 - (std::abs(ideal - curVal)) / (it->expression().max - it->expression().min);
+            rhsSimilarity += sim;
+        }
+        // normalize and compare
+        return (lhsSimilarity/instructionCount) > (rhsSimilarity/instructionCount);
+    });
 }
 
 std::pair<Individual, Individual> Population::getParents(Individuals fittest) {
@@ -109,13 +110,12 @@ std::pair<Individual, Individual> Population::getParents(Individuals fittest) {
     Individuals::iterator it = fittest.begin();
     std::advance(it, parent1Index);
     const Individual parent1 = *it;
-    // reset iterator to start
-    it = fittest.begin();
     // Don't use the same parent twice
     int parent2Index;
     do {
         parent2Index = choose(mRng);
     } while (parent2Index == parent1Index);
+    it = fittest.begin();
     std::advance(it, parent2Index);
     const Individual parent2 = *it;
     return std::make_pair(parent1, parent2);
@@ -128,19 +128,20 @@ Individual Population::breed(std::pair<Individual, Individual> parents) {
     // Or determine some new value based on the two of the parents
     // For now, go basic and just pick one
 
-    for (Individual::const_iterator it = parents.first.cbegin(); it != parents.first.cend(); ++it) {
-        const Instruction parent1 = *it;
-        const Instruction parent2 = parents.second.instruction(parent1.name());
-        std::string attributeName = parent1.name();
-        Expression expression = parent1.expression();
+    for (Instructions::const_iterator it = parents.first.instructions().cbegin(); it != parents.first.instructions().cend(); ++it) {
+        const Instruction parent1Instruction = *it;
+        const Instruction parent2Instruction = parents.second.instruction(parent1Instruction.name());
+        std::string instructionName = parent1Instruction.name();
+        Expression expression = parent1Instruction.expression();
         std::array<decltype(expression.current), 4> intervals {
             static_cast<decltype(expression.current)>(expression.min),
-            std::min(parent1.expression().current, parent2.expression().current),
-            std::max(parent1.expression().current, parent2.expression().current),
+            std::min(parent1Instruction.expression().current, parent2Instruction.expression().current),
+            std::max(parent1Instruction.expression().current, parent2Instruction.expression().current),
             static_cast<decltype(expression.current)>(expression.max)
         };
-        decltype(expression.current) desired = mSorter.get(attributeName);
-        _logger->info("Desired current for {} is {}", attributeName, desired);
+
+        decltype(expression.current) desired = mAudience->preferences()[instructionName].current;
+        _logger->info("Desired current for {} is {}", instructionName, desired);
         decltype(expression.current) middle = 80.0;
         // normalize desired within range
         decltype(middle) weightingLR = (desired - expression.min) / (expression.max - expression.min);
@@ -165,7 +166,7 @@ Individual Population::breed(std::pair<Individual, Individual> parents) {
         if (expression.round) {
             expression.current = std::round(expression.current);
         }
-        Instruction newInstruction(attributeName, expression);
+        Instruction newInstruction(instructionName, expression);
         instructions.emplace_back(newInstruction);
     }
     return Individual(instructions);
@@ -177,7 +178,7 @@ void Population::nextGeneration(const uint8_t n) {
     Individuals fittest;
     Individuals::iterator it = mIndividuals.begin();
     std::advance(it, n-1);
-    fittest.insert(mIndividuals.begin(), it);
+    fittest.insert(fittest.end(), std::make_move_iterator(mIndividuals.begin()), std::make_move_iterator(it));
 
     // Remove unfittest
     it = mIndividuals.begin();
@@ -193,7 +194,7 @@ void Population::nextGeneration(const uint8_t n) {
         std::pair<Individual, Individual> parents = getParents(fittest);
         // cross-breed top (they're also getting mutated)
         Individual newChild = breed(parents);
-        mIndividuals.insert(newChild);
+        mIndividuals.emplace_back(newChild);
     }
 }
 

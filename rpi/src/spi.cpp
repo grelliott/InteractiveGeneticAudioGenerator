@@ -77,4 +77,8 @@ void SPI::preferenceUpdated(const Preference& preference) {
     // This is the audience, so it should notify the conductors somehow
 }
 
+Preferences SPI::preferences() {
+	return mPreferences;
+}
+
 }  // namespace audiogene

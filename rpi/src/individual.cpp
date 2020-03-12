@@ -33,14 +33,24 @@ namespace audiogene {
 
 Individual::Individual() {}
 
-Individual::Individual(const std::map<std::string, std::map<std::string, std::string>> instructions) {
-	// make instructions!
-	(void)instructions;
+Individual::Individual(const std::map<std::string, std::map<std::string, std::string>> instructions):
+	_logger(spdlog::get("log")) {
+	// make instructions from initial config
+
+	decltype(instructions)::const_iterator it;
+    for (it = instructions.begin(); it != instructions.end(); ++it) {
+        std::string name = it->first;
+        std::map<std::string, std::string> expression = it->second;
+        mInstructions.push_back(Instruction(name, expression));
+    }
 }
 
 //TODO this all needs changing
 Individual::Individual(const Instructions instructions):
-    mInstructions(instructions) {}
+	_logger(spdlog::get("log")),
+    mInstructions(instructions) {
+    	// empty constructor
+}
 
 Instruction Individual::instruction(const std::string& name) const {
     for (const Instruction& instruction : mInstructions) {
@@ -50,11 +60,8 @@ Instruction Individual::instruction(const std::string& name) const {
     }
     return Instruction();
 }
-/*
 
-*/
-
-Instructions Individual::giveInstructions() const {
+Instructions Individual::instructions() const {
 	// perhaps stream something?
 	// Either way, give instructions to musician
 	return mInstructions;

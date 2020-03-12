@@ -23,12 +23,17 @@
 
 #pragma once
 
+#include <map>
+#include <string>
 namespace audiogene {
 
-class Preference {
+struct Preference {
 	double min;
     double max;
     double current;
 };
+
+using AttributeName = std::string;
+using Preferences = std::map<AttributeName, Preference>;
 
 }  // namespace audiogene

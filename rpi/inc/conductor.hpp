@@ -22,14 +22,14 @@
 
 #pragma once
 
-#include "instructions.hpp"
+#include "instruction.hpp"
 
 namespace audiogene {
 class Conductor {
  public:
     //Conductor(Instructions instructions) = default;
  	virtual ~Conductor() {}
- 	virtual Instructions giveInstructions() const = 0;
+ 	virtual Instructions instructions() const = 0;
 };
 
 }  // namespace audiogene

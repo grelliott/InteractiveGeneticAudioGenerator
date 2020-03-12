@@ -43,7 +43,7 @@ OSC::OSC(const std::string& serverIp, const std::string& serverPort):
 //OSC::~OSC() {}
 
 void OSC::prepare() {
-	//TODO can we listen for something instead of polling outself?
+	//TODO can we listen for something instead of polling ourself?
 	// wait for SuperCollider by querying /notify
     // need to set up an OSC server for this
     while (!isSCReady()) {
@@ -96,7 +96,7 @@ void OSC::receiveInstructions(const Instructions& instructions) {
 
 void OSC::setConductor(const Individual& conductor) {
     _logger->info("Setting new conductor {}", conductor);
-    for (Instructions::const_iterator it = conductor.giveInstructions().cbegin(); it != conductor.giveInstructions().cend(); ++it) {
+    for (Instructions::const_iterator it = conductor.instructions().cbegin(); it != conductor.instructions().cend(); ++it) {
         lo_send(serverAddr, std::string("/gene/"+it->name()).c_str(), "f", it->expression().current);
     }
 }
