@@ -37,71 +37,6 @@
 
 namespace audiogene {
 
-// This is a preference
-// struct Criterion {
-//     double min;
-//     double max;
-//     double current;
-// };
-// // These are preferences
-// typedef std::map<AttributeName, Criterion> Criteria;
-
-// Individuals are sorted based on how closely their instructions match the current preferences
-// So when the audience updates a preference,
-class FitnessSorter {
-    //Preferences mPreferences;
-
- public:
-    // void setPreferences(Preferences preferences) {
-    //     mPreferences = preferences;
-    // }
-    // double get(const AttributeName& name) {
-    //     return mPreferences[name].current;
-    // }
-
-    // This is what gets called through main's input
-    // It's taking in a preference that the audience is giving
-    // This is then used to order the individuals
-    // In the next generation, the individuals that most fit the overall preferences
-    // will reproduce. The fittest of that will conduct the music for some period of time
-    // void updatePreference(const AttributeName& name, bool increase) {
-    //     Preference c = mPreferences[name];
-    //     if (increase) {
-    //         mCriteria[name].current = std::min(c.max, c.current + 1);
-    //     } else {
-    //         mCriteria[name].current = std::max(c.min, c.current - 1);
-    //     }
-    //     spdlog::get("log")->info("Updated {} to {}", name, mPreferences[name].current);
-    // }
-
-    // To sort individuals, go through each attribute and determine how close the value is to the criteria
-    // the closer is it, the closer the result is to 1
-    // normalize the sum of each attribute's proximity for each individual, and the winner is the one closer to zero
-    // bool operator() (const Individual& lhs, const Individual& rhs) const {
-    //     float lhsSimilarity = 0;
-    //     float rhsSimilarity = 0;
-    //     const uint8_t attributeCount = lhs.size();
-    //     // Calculate lhs
-    //     for (Individual::const_iterator it = lhs.cbegin(); it != lhs.cend(); ++it) {
-    //         const double curVal = it->expression().current;
-    //         const double ideal = mPreferences[it->name()].current;
-    //         // const double ideal = mCriteria.get(it->name());
-    //         float sim = 1 - (std::abs(ideal - curVal)) / (it->expression().max - it->expression().min);
-    //         lhsSimilarity += sim;
-    //     }
-    //     // Calculate rhs
-    //     for (Individual::const_iterator it = rhs.cbegin(); it != rhs.cend(); ++it) {
-    //         const double curVal = it->expression().current;
-    //         const double ideal = mPreferences[it->name()].current;
-    //         // const double ideal = mCriteria.get(it->name());
-    //         float sim = 1 - (std::abs(ideal - curVal)) / (it->expression().max - it->expression().min);
-    //         rhsSimilarity += sim;
-    //     }
-    //     // normalize and compare
-    //     return (lhsSimilarity/attributeCount) > (rhsSimilarity/attributeCount);
-    // }
-};
-
 using Individuals = std::vector<Individual>;
 
 class Population {
@@ -128,6 +63,7 @@ class Population {
 
     void initializePopulation(const Individual& seed);
     void sortPopulation();
+    double similarity(const Individual& indvidual);
 
     // These are related to the genetics of a population
     // Maybe these should be in a different class
@@ -140,7 +76,7 @@ class Population {
     Population(const uint8_t n, const Individual& seed, const std::shared_ptr<Audience> audience);
     ~Population() = default;
 
-	Individual fittest();
+	const Individual fittest();
 
     // Not quite sure how this fits in here, needs renaming
     void nextGeneration(const uint8_t n);

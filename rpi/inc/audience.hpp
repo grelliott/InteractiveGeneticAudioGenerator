@@ -26,14 +26,23 @@
 
 namespace audiogene {
 
+/*! An interface that each possible input source must implement
+ *
+ */
 class Audience {
 protected:
 	Preferences mPreferences;
 
 public:
-	virtual void prepare() = 0;
-	virtual void preferenceUpdated(const Preference& preference) = 0;
-	virtual Preferences preferences() = 0;
+	virtual bool prepare() = 0;
+
+	void preferenceUpdated(const AttributeName name, const Preference& preference) {
+		mPreferences.at(name) = preference;
+	}
+
+	Preferences preferences() {
+		return mPreferences;
+	}
 };
 
 }  // namespace audiogene

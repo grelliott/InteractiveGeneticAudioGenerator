@@ -30,46 +30,32 @@
 #include <string>
 #include <map>
 
-#include "conductor.hpp"
 #include "instruction.hpp"
 
 namespace audiogene {
 
-// replace with Instructions
-//typedef typename std::vector<Attribute> Attributes;
-
-class Individual: public Conductor {
+class Individual {
     std::shared_ptr<spdlog::logger> _logger;
-    Instructions mInstructions;
+    Instructions _instructions;
+    uint32_t _id;
 
+    static uint32_t s_id;
  public:
-    Individual();
+    Individual() = delete;
     /*! Create an individual from config values */
     explicit Individual(const std::map<std::string, std::map<std::string, std::string>> instructions);
     explicit Individual(const Instructions instructions);
-    ~Individual() {}
+    ~Individual() = default;
 
-    Instructions instructions() const final;
-    // replace with instructions
-    Instruction instruction(const std::string& name) const;
-
-    // Not quite sure why an individual implements an iterator for instructions...
-    //TODO remove
-    // typedef typename Instructions::iterator iterator;
-    // typedef typename Instructions::const_iterator const_iterator;
-    // inline iterator begin() noexcept { return mInstructions.begin(); }
-    // inline const_iterator cbegin() const noexcept { return mInstructions.cbegin(); }
-    // inline iterator end() noexcept { return mInstructions.end(); }
-    // inline const_iterator cend() const noexcept { return mInstructions.cend(); }
-    // inline uint8_t size() const noexcept { return mInstructions.size(); }
+    Instructions instructions() const noexcept;
+    Instruction instruction(const std::string& name) const noexcept;
 
     template<typename OStream>
     friend OStream &operator<<(OStream &os, const Individual &obj) {
-        (void)obj;  //TODO print out individual stuff
-        os << "Individual \n";
-        // for (const Attribute &attribute : obj.mAttributes) {
-        //     os << "\t" << attribute << "\n";
-        // }
+        os << "Individual " << obj._id << std::endl;
+        for (const Instruction &instruction : obj._instructions) {
+            os << "\t" << instruction << "\n";
+        }
         return os;
     }
 };

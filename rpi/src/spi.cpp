@@ -32,53 +32,41 @@ SPI::SPI() {
 	_logger = spdlog::get("log");
 }
 
-void SPI::prepare() {
-	// std::thread spiListener; //member
+bool SPI::prepare() {
     // Set up SPI
     int spiFd = wiringPiSPISetup(0, 500000);
     if (spiFd == -1) {
         _logger->warn("Failed to connect to SPI");
+        return false;
     } else {
         // make a new thread to listen to SPI
-        spiListenerThread = std::thread(std::bind(&SPI::listener, this));
+        spiListenerThread = std::thread([this] () {
+		    unsigned char buf[2];
+		    memset(buf, 0, 2);
+		    buf[0] = 0x80;
+		    // TODO change to some broadcast mechanism
+		    int stop = 0;
+		    // main loop
+		    while (stop == 0) {
+		        buf[0] = 0x80;
+		        wiringPiSPIDataRW(0, buf, 1);
+		        if (buf[0] != 0) {
+		            unsigned char data = buf[0];
+		            // loop through bits to see which are set
+		            for (size_t i = 0; i < sizeof(data) * 8; i++) {
+		                if (data & 1 << i) {
+		                    _logger->info("Received data from controller {}", i);
+		                    //TODO actually determine which preference was updated and update
+		                    preferenceUpdated("", {});
+		                }
+		            }
+		        }
+		        sleep(1);
+		    }
 
+		});
+		return true;
     }
-}
-
-void SPI::listener() {
-    unsigned char buf[2];
-    memset(buf, 0, 2);
-    buf[0] = 0x80;
-    // TODO change to some broadcast mechanism
-    int stop = 0;
-    // main loop
-    while (stop == 0) {
-        buf[0] = 0x80;
-        wiringPiSPIDataRW(0, buf, 1);
-        if (buf[0] != 0) {
-            unsigned char data = buf[0];
-            // loop through bits to see which are set
-            for (size_t i = 0; i < sizeof(data) * 8; i++) {
-                if (data & 1 << i) {
-                    _logger->info("Received data from controller {}", i);
-                    //TODO actually determine which preference was updated and update
-                    preferenceUpdated({});
-                }
-            }
-        }
-        sleep(1);
-    }
-
-}
-
-void SPI::preferenceUpdated(const Preference& preference) {
-    (void)preference;
-    //TODO actually do something with the updated preference
-    // This is the audience, so it should notify the conductors somehow
-}
-
-Preferences SPI::preferences() {
-	return mPreferences;
 }
 
 }  // namespace audiogene

@@ -32,15 +32,12 @@ namespace audiogene {
 class SPI: public Audience {
 	std::shared_ptr<spdlog::logger> _logger;
 	std::thread spiListenerThread;
-	Preferences mPreferences;
-	void listener();
+
 public:
 	SPI();
 	~SPI() = default;
 
-	void prepare() override;
-	void preferenceUpdated(const Preference& preference) override;
-	Preferences preferences() override;
+	bool prepare() final;
 };
 
 }  // namespace audiogene

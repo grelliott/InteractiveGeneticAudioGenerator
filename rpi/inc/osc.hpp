@@ -24,6 +24,7 @@
 
 #include <spdlog/spdlog.h>
 #include <lo/lo.h>
+#include <lo/lo_cpp.h>
 
 #include <iostream>
 #include <string>
@@ -36,19 +37,18 @@
 namespace audiogene {
 
 class OSC: public Musician {
-    static bool msIsSCReady;
-    static lo_server_thread msSt;
-    const lo_address serverAddr;
     std::shared_ptr<spdlog::logger> _logger;
+    const lo_address serverAddr;
+    lo::ServerThread st;
 
-    bool isSCReady();
     bool send(const std::string& path, const std::string& msg);
  public:
     OSC();
     OSC(const std::string& serverIp, const std::string& serverPort);
     ~OSC() = default;
-    void prepare() final;
+
     void receiveInstructions(const Instructions& instructions) final;
     void setConductor(const Individual& conductor) final;
 };
+
 }  // namespace audiogene

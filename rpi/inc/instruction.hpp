@@ -49,6 +49,7 @@ struct Expression {
         return os << "current: " << obj.current << ", min: " << obj.min << ", max: " << obj.max;
     }
 };
+
 typedef std::string AttributeName;
 
 class Instruction {

@@ -24,81 +24,59 @@
 
 #include <spdlog/spdlog.h>
 #include <lo/lo.h>
+#include <lo/lo_cpp.h>
+
+#include <future>
 
 namespace audiogene {
-
-bool OSC::msIsSCReady = false;
-lo_server_thread OSC::msSt = nullptr;
 
 OSC::OSC():
     OSC(nullptr, "57120") {}
 
 OSC::OSC(const std::string& serverIp, const std::string& serverPort):
-    serverAddr(lo_address_new(serverIp.c_str(), serverPort.c_str())) {
-        _logger = spdlog::get("log");
-        _logger->info("OSC Initialized. {}:{}", serverIp, serverPort);
-}
-
-// TODO maybe we should disconnect from the server first?
-//OSC::~OSC() {}
-
-void OSC::prepare() {
-	//TODO can we listen for something instead of polling ourself?
-	// wait for SuperCollider by querying /notify
-    // need to set up an OSC server for this
-    while (!isSCReady()) {
-        sleep(1);  // wait 1 second
-    }
-}
-
-bool OSC::isSCReady() {
-    if (msIsSCReady) {
-        if (msSt) {
-            lo_server_thread_free(msSt);
-            lo_send(serverAddr, "/notify", "i", 0);
-        }
-        return true;
-    }
-    if (msSt) {
-        return false;
+		_logger(spdlog::get("log")),
+	    serverAddr(lo_address_new(serverIp.c_str(), serverPort.c_str())),
+	    st(9000) {
+	if (!st.is_valid()) {
+		_logger->warn("Invalid OSC Server");
+    	return;
     }
 
-    msSt = lo_server_thread_new(nullptr, [] (int num, const char* m, const char* path) {
-        // error handler
-        std::cout << "OSC Server Error: num = " << num << " m = " << m << ", path = " << path << std::endl;
-    });
+	std::promise<void> isReadyPromise;
+	std::future<void> isReady(isReadyPromise.get_future());
 
-    lo_server_thread_add_method(msSt, "/done", "s", [] (const char* path,
-                const char* types,
-                lo_arg** argv, int argc,
-                void* data, void* user_data) -> int {
-        (void)path;
-        (void)types;
-        (void)argv;
-        (void)argc;
-        (void)data;
-        (void)user_data;
-        msIsSCReady = true;
-        return 1;
-    }, nullptr);
+    st.set_callbacks([this, &isReadyPromise] () {
+    	_logger->info("OSC Thread started");
+    	isReadyPromise.set_value();
+    },
+    				 [this] () {
+		_logger->info("OSC Thread finished");
+	});
 
-    lo_server_thread_start(msSt);
+	st.add_method("done", "s", [this] (lo_arg **argv, int len) {
+		(void)len;
+		_logger->info("Done: %s", argv[0]->s);
+	});
 
+	st.start();
+
+	// Notify SuperCollider we're ready
     lo_send(serverAddr, "/notify", "i", 1);
 
-    return false;
+    // Wait until we've started and the promise is set
+    isReady.get();
+    _logger->info("OSC Initialized. {}:{}", serverIp, serverPort);
 }
 
 void OSC::receiveInstructions(const Instructions& instructions) {
-	// instructions should contain a bunch of attributes and values
-    (void)instructions;
+	for (Instructions::const_iterator it = instructions.cbegin(); it != instructions.cend(); ++it) {
+	    lo_send(serverAddr, std::string("/gene/"+it->name()).c_str(), "f", it->expression().current);
+	}
 }
 
 void OSC::setConductor(const Individual& conductor) {
     _logger->info("Setting new conductor {}", conductor);
-    for (Instructions::const_iterator it = conductor.instructions().cbegin(); it != conductor.instructions().cend(); ++it) {
-        lo_send(serverAddr, std::string("/gene/"+it->name()).c_str(), "f", it->expression().current);
-    }
+    receiveInstructions(conductor.instructions());
 }
 
 bool OSC::send(const std::string& path, const std::string& msg) {

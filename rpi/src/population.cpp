@@ -61,11 +61,15 @@ void Population::initializePopulation(const Individual& seed) {
         	// The seed's instruction
             std::string name(it->name());
             Expression expression(it->expression());
+
             // this can be pulled out into a new method
-            // it's getting a new expression over a distribution
-            //
-            std::normal_distribution<> d(expression.current, 5);
+            // it's getting a new expression over a normal distribution
+            //TODO get stddev from expression somehow...?
+            double stddev = 1.0;
+            std::normal_distribution<> d(expression.current, stddev);
             double v;
+            // This is to keep sampling new values from the overall distribution until one is found within
+            // the allowable range
             do {
                 v = d(mRng);
             } while ( v < expression.min || v > expression.max );
@@ -73,32 +77,29 @@ void Population::initializePopulation(const Individual& seed) {
                 v = std::round(v);
             }
             expression.current = v;
+
             newInstructions.emplace_back(Instruction(name, expression));
         }
         mIndividuals.emplace_back(Individual(newInstructions));
     }
 }
 
+double Population::similarity(const Individual& indvidual) {
+	double similarity = 0;
+    for (Instructions::const_iterator it = indvidual.instructions().cbegin(); it != indvidual.instructions().cend(); ++it) {
+        const double curVal = it->expression().current;
+        const double ideal = mAudience->preferences()[it->name()].current;
+        double sim = 1 - (std::abs(ideal - curVal)) / (it->expression().max - it->expression().min);
+        similarity += sim;
+    }
+    return similarity;
+}
+
 void Population::sortPopulation() {
 	std::sort(mIndividuals.begin(), mIndividuals.end(), [&] (const Individual& lhs, const Individual& rhs) -> bool {
-        float lhsSimilarity = 0;
-        float rhsSimilarity = 0;
+        float lhsSimilarity = similarity(lhs);
+        float rhsSimilarity = similarity(rhs);
         const uint8_t instructionCount = lhs.instructions().size();
-        // Calculate lhs
-        for (Instructions::const_iterator it = lhs.instructions().cbegin(); it != lhs.instructions().cend(); ++it) {
-            const double curVal = it->expression().current;
-            const double ideal = mAudience->preferences()[it->name()].current;
-            float sim = 1 - (std::abs(ideal - curVal)) / (it->expression().max - it->expression().min);
-            lhsSimilarity += sim;
-        }
-        // Calculate rhs
-        for (Instructions::const_iterator it = rhs.instructions().cbegin(); it != rhs.instructions().cend(); ++it) {
-            const double curVal = it->expression().current;
-            const double ideal = mAudience->preferences()[it->name()].current;
-            float sim = 1 - (std::abs(ideal - curVal)) / (it->expression().max - it->expression().min);
-            rhsSimilarity += sim;
-        }
-        // normalize and compare
         return (lhsSimilarity/instructionCount) > (rhsSimilarity/instructionCount);
     });
 }
@@ -132,6 +133,7 @@ Individual Population::breed(std::pair<Individual, Individual> parents) {
         const Instruction parent1Instruction = *it;
         const Instruction parent2Instruction = parents.second.instruction(parent1Instruction.name());
         std::string instructionName = parent1Instruction.name();
+
         Expression expression = parent1Instruction.expression();
         std::array<decltype(expression.current), 4> intervals {
             static_cast<decltype(expression.current)>(expression.min),
@@ -154,6 +156,7 @@ Individual Population::breed(std::pair<Individual, Individual> parents) {
             weightRight
         };
 
+        //TODO extract to mutate method
         // This performs a mutation on the new value
         // std::normal_distribution<> distribution((parent1.expression().current + parent2.expression().current)/2,
         //         std::abs(parent1.expression().current - parent2.expression().current)*2);
@@ -163,6 +166,7 @@ Individual Population::breed(std::pair<Individual, Individual> parents) {
                 intervals.end(), weights.begin());
 
         expression.current = distribution(mRng);
+
         if (expression.round) {
             expression.current = std::round(expression.current);
         }
@@ -198,8 +202,8 @@ void Population::nextGeneration(const uint8_t n) {
     }
 }
 
-Individual Population::fittest() {
-    return *mIndividuals.begin();
+const Individual Population::fittest() {
+    return mIndividuals.front();
 }
 
 }  // namespace audiogene

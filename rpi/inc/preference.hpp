@@ -25,6 +25,7 @@
 
 #include <map>
 #include <string>
+
 namespace audiogene {
 
 struct Preference {

@@ -94,9 +94,6 @@ int main(int argc, char* argv[]) {
     YAML::Node scNode = config["SuperCollider"];
     std::cout << "Initializing OSC" << std::endl;
     std::unique_ptr<audiogene::Musician> musician(new audiogene::OSC(scNode["addr"].as<std::string>(), scNode["port"].as<std::string>()));
-
-    //TODO test result
-    musician->prepare();
 	std::cout << "SC is ready" << std::endl;
 
     //TODO don't fix input to a given protocol
@@ -107,8 +104,10 @@ int main(int argc, char* argv[]) {
     //Audience audience = Midi();
 	std::shared_ptr<audiogene::Audience> audience(new audiogene::SPI());
 	//TODO test result
-	audience->prepare();
-
+	if (!audience->prepare()) {
+		logger->error("Failed to prepare input!");
+		return -1;
+	}
 
     // Initialize genetics
     if (!config["genes"]) {
@@ -152,6 +151,7 @@ int main(int argc, char* argv[]) {
     uint8_t loops = 16;
     uint8_t topN = config["keepFittest"].as<int>();
     uint8_t i = 0;
+
     // Make new generations
     while (i < loops && stop == 0) {
         std::cout << "loop " << +i << std::endl;
