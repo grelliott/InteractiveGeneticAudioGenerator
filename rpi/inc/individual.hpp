@@ -30,38 +30,34 @@
 #include <string>
 #include <map>
 
-#include "attribute.hpp"
+#include "instruction.hpp"
 
-namespace audiogen {
+namespace audiogene {
 
-typedef typename std::vector<Attribute> Attributes;
 class Individual {
     std::shared_ptr<spdlog::logger> _logger;
-    Attributes mAttributes;
+    Instructions _instructions;
+    uint32_t _id;
 
+    static uint32_t s_id;
  public:
-    Individual();
-    explicit Individual(const std::map<std::string, std::map<std::string, std::string>> attributes);
-    explicit Individual(const Attributes attributes);
-    ~Individual() {}
+    Individual() = delete;
+    /*! Create an individual from config values */
+    explicit Individual(const std::map<std::string, std::map<std::string, std::string>> instructions);
+    explicit Individual(const Instructions instructions);
+    ~Individual() = default;
 
-    Attribute getAttribute(const std::string& name) const;
-    typedef typename Attributes::iterator iterator;
-    typedef typename Attributes::const_iterator const_iterator;
-    inline iterator begin() noexcept { return mAttributes.begin(); }
-    inline const_iterator cbegin() const noexcept { return mAttributes.cbegin(); }
-    inline iterator end() noexcept { return mAttributes.end(); }
-    inline const_iterator cend() const noexcept { return mAttributes.cend(); }
-    inline uint8_t size() const noexcept { return mAttributes.size(); }
+    Instructions instructions() const noexcept;
+    Instruction instruction(const std::string& name) const noexcept;
 
     template<typename OStream>
     friend OStream &operator<<(OStream &os, const Individual &obj) {
-        os << "Individual \n";
-        for (const Attribute &attribute : obj.mAttributes) {
-            os << "\t" << attribute << "\n";
+        os << "Individual " << obj._id << std::endl;
+        for (const Instruction &instruction : obj._instructions) {
+            os << "\t" << instruction << "\n";
         }
         return os;
     }
 };
 
-}  // namespace audiogen
+}  // namespace audiogene

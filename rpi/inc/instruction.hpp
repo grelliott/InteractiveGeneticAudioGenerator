@@ -20,52 +20,57 @@
  * THE SOFTWARE.
  */
 
-#include "individual.hpp"
+#pragma once
 
-#include <spdlog/spdlog.h>
-
-#include <iostream>
-#include <cassert>
+#include <cstdint>
 #include <map>
+#include <vector>
 #include <string>
+
+#include "spdlog/spdlog.h"
+#include "spdlog/fmt/ostr.h"
 
 namespace audiogene {
 
-uint32_t Individual::s_id = 0;
+enum class ExpressionActivates {
+    OnBar,  //!< Make the change on the next bar
+    OverBar  //!< Gradually make the change over the next bar
+};
 
-Individual::Individual(const std::map<std::string, std::map<std::string, std::string>> instructions):
-	_logger(spdlog::get("log")),
-	_id(s_id++) {
-	// make instructions from initial config
+struct Expression {
+    uint32_t min;
+    uint32_t max;
+    double current;
+    bool round;
+    ExpressionActivates activates;
 
-	decltype(instructions)::const_iterator it;
-    for (it = instructions.begin(); it != instructions.end(); ++it) {
-        std::string name = it->first;
-        std::map<std::string, std::string> expression = it->second;
-        _instructions.push_back(Instruction(name, expression));
+    template<typename OStream>
+    friend OStream &operator<<(OStream &os, const Expression &obj) {
+        return os << "current: " << obj.current << ", min: " << obj.min << ", max: " << obj.max;
     }
-}
+};
 
-Individual::Individual(const Instructions instructions):
-	_logger(spdlog::get("log")),
-    _instructions(instructions),
-    _id(s_id++) {
-    	// empty constructor
-}
+typedef std::string AttributeName;
 
-Instruction Individual::instruction(const std::string& name) const noexcept {
-    for (const Instruction& instruction : _instructions) {
-        if (instruction.name() == name) {
-            return instruction;
-        }
+class Instruction {
+    AttributeName mName;
+    Expression mExpression;
+ public:
+    Instruction();
+    Instruction(AttributeName name, std::map<std::string, std::string> expression);
+    Instruction(AttributeName name, Expression expression);
+    ~Instruction() = default;
+
+    AttributeName name() const;
+    Expression expression() const;
+
+    template<typename OStream>
+    friend OStream &operator<<(OStream &os, const Instruction &obj) {
+        return os << "Instruction " << obj.mName <<  ": " << obj.mExpression;
     }
-    return Instruction();
-}
+};
 
-Instructions Individual::instructions() const noexcept {
-	// perhaps stream something?
-	// Either way, give instructions to musician
-	return _instructions;
-}
+using Instructions = std::vector<Instruction>;
 
 }  // namespace audiogene
+

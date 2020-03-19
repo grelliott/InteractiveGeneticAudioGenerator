@@ -20,42 +20,29 @@
  * THE SOFTWARE.
  */
 
-#include "attribute.hpp"
+#pragma once
 
-namespace audiogen {
+#include "preference.hpp"
 
-Attribute::Attribute() {}
+namespace audiogene {
 
-Attribute::Attribute(AttributeName name, Expression expression, uint8_t generation) :
-    mName(name),
-    mExpression(expression),
-    mGeneration(generation) {
-}
+/*! An interface that each possible input source must implement
+ *
+ */
+class Audience {
+protected:
+	Preferences mPreferences;
 
-Attribute::Attribute(AttributeName name, std::map<std::string, std::string> expression, uint8_t generation) :
-    mName(name),
-    mGeneration(generation) {
-        mExpression = {};
-        mExpression.min = std::stoi(expression["min"]);
-        mExpression.max = std::stoi(expression["max"]);
-        mExpression.current = std::stoi(expression["current"]);
-        mExpression.round = expression["round"] == "true";
+public:
+	virtual bool prepare() = 0;
 
-        if (expression["activates"] == "OnBar") {
-            mExpression.activates = ExpressionActivates::OnBar;
-        } else if (expression["activates"] == "OverBar") {
-            mExpression.activates = ExpressionActivates::OverBar;
-        } else {
-            mExpression.activates = ExpressionActivates::OnBar;
-        }
-    }
+	void preferenceUpdated(const AttributeName name, const Preference& preference) {
+		mPreferences.at(name) = preference;
+	}
 
-AttributeName Attribute::name() const {
-    return mName;
-}
+	Preferences preferences() {
+		return mPreferences;
+	}
+};
 
-Expression Attribute::expression() const {
-    return mExpression;
-}
-
-}  // namespace audiogen
+}  // namespace audiogene

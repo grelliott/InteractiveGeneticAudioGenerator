@@ -33,83 +33,53 @@
 #include <memory>
 
 #include "individual.hpp"
+#include "audience.hpp"
 
-namespace audiogen {
+namespace audiogene {
 
-struct Criterion {
-    double min;
-    double max;
-    double current;
-};
-typedef std::map<AttributeName, Criterion> Criteria;
+using Individuals = std::vector<Individual>;
 
-class AttributeSorter {
-    Criteria mCriteria;
-
- public:
-    void setCriteria(Criteria criteria) {
-        mCriteria = criteria;
-    }
-    double get(const AttributeName& name) {
-        return mCriteria[name].current;
-    }
-
-    void updateCriterion(const AttributeName& name, bool increase) {
-        Criterion c = mCriteria[name];
-        if (increase) {
-            mCriteria[name].current = std::min(c.max, c.current + 1);
-        } else {
-            mCriteria[name].current = std::max(c.min, c.current - 1);
-        }
-        spdlog::get("log")->info("Updated {} to {}", name, mCriteria[name].current);
-    }
-    // To sort individuals, go through each attribute and determine how close the value is to the criteria
-    // the closer is it, the closer the result is to 1
-    // normalize the sum of each attribute's proximity for each individual, and the winner is the one closer to zero
-    bool operator() (const Individual& lhs, const Individual& rhs) {
-        float lhsSimilarity = 0;
-        float rhsSimilarity = 0;
-        const uint8_t attributeCount = lhs.size();
-        for (Individual::const_iterator it = lhs.cbegin(); it != lhs.cend(); ++it) {
-            const double curVal = it->expression().current;
-            const double ideal = mCriteria[it->name()].current;
-            // const double ideal = mCriteria.get(it->name());
-            float sim = 1 - (std::abs(ideal - curVal)) / (it->expression().max - it->expression().min);
-            lhsSimilarity += sim;
-        }
-
-        for (Individual::const_iterator it = rhs.cbegin(); it != rhs.cend(); ++it) {
-            const double curVal = it->expression().current;
-            const double ideal = mCriteria[it->name()].current;
-            // const double ideal = mCriteria.get(it->name());
-            float sim = 1 - (std::abs(ideal - curVal)) / (it->expression().max - it->expression().min);
-            rhsSimilarity += sim;
-        }
-
-        return (lhsSimilarity/attributeCount) > (rhsSimilarity/attributeCount);
-    }
-};
-
-typedef std::set<Individual, AttributeSorter> Individuals;
 class Population {
     std::shared_ptr<spdlog::logger> _logger;
+
+    // Perhaps there should be a new class to perform
+    // breeding on the population?
     std::default_random_engine mRng;
-    AttributeSorter mSorter;
+
+    // The population shouldn't have this
+    // Instead, it should store new members of a generation
+    // in a vector, and use the preferences of the audience
+    // as the source for a sorter on said vector
+    //FitnessSorter mSorter;
+
     Individuals mIndividuals;
 
     const uint8_t mSize;
     uint8_t mGeneration;
 
-    Criteria initializeCriteria(const Individual& seed);
+    // When it's time to create a new generation, get preferences from the audience
+    // and sort individuals based on that
+    std::shared_ptr<Audience> mAudience;
+
     void initializePopulation(const Individual& seed);
+    void sortPopulation();
+    double similarity(const Individual& indvidual);
+
+    // These are related to the genetics of a population
+    // Maybe these should be in a different class
     std::pair<Individual, Individual> getParents(Individuals fittest);
     Individual breed(std::pair<Individual, Individual> parents);
     void mutate(Individual child);
 
  public:
-    Population();
-    Population(const uint8_t n, const Individual& seed);
-    ~Population();
+    Population() = delete;
+    Population(const uint8_t n, const Individual& seed, const std::shared_ptr<Audience> audience);
+    ~Population() = default;
+
+	const Individual fittest();
+
+    // Not quite sure how this fits in here, needs renaming
+    void nextGeneration(const uint8_t n);
 
     template<typename OStream>
     friend OStream &operator<<(OStream &os, const Population &obj) {
@@ -120,10 +90,6 @@ class Population {
         return os;
     }
 
-    void nextGeneration(const uint8_t n);
-    void updateCriterion(const AttributeName name);
-
-    Individual fittest();
 };
 
-}  // namespace audiogen
+}  // namespace audiogene

@@ -20,35 +20,40 @@
  * THE SOFTWARE.
  */
 
-#pragma once
-
-#include <spdlog/spdlog.h>
-#include <lo/lo.h>
-#include <lo/lo_cpp.h>
-
-#include <iostream>
-#include <string>
-#include <memory>
-
-#include "musician.hpp"
 #include "instruction.hpp"
-#include "individual.hpp"
 
 namespace audiogene {
 
-class OSC: public Musician {
-    std::shared_ptr<spdlog::logger> _logger;
-    const lo_address serverAddr;
-    lo::ServerThread st;
+Instruction::Instruction() {}
 
-    bool send(const std::string& path, const std::string& msg);
- public:
-    OSC();
-    OSC(const std::string& serverIp, const std::string& serverPort);
-    ~OSC() = default;
+Instruction::Instruction(AttributeName name, Expression expression) :
+    mName(name),
+    mExpression(expression) {
+}
 
-    void receiveInstructions(const Instructions& instructions) final;
-    void setConductor(const Individual& conductor) final;
-};
+Instruction::Instruction(AttributeName name, std::map<std::string, std::string> expression) :
+		mName(name) {
+    mExpression = {};
+    mExpression.min = std::stoi(expression["min"]);
+    mExpression.max = std::stoi(expression["max"]);
+    mExpression.current = std::stoi(expression["current"]);
+    mExpression.round = expression["round"] == "true";
+
+    if (expression["activates"] == "OnBar") {
+        mExpression.activates = ExpressionActivates::OnBar;
+    } else if (expression["activates"] == "OverBar") {
+        mExpression.activates = ExpressionActivates::OverBar;
+    } else {
+        mExpression.activates = ExpressionActivates::OnBar;
+    }
+}
+
+AttributeName Instruction::name() const {
+    return mName;
+}
+
+Expression Instruction::expression() const {
+    return mExpression;
+}
 
 }  // namespace audiogene

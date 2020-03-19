@@ -20,52 +20,24 @@
  * THE SOFTWARE.
  */
 
-#include "individual.hpp"
+#pragma once
 
 #include <spdlog/spdlog.h>
 
-#include <iostream>
-#include <cassert>
-#include <map>
-#include <string>
+#include "audience.hpp"
+#include "preference.hpp"
 
 namespace audiogene {
 
-uint32_t Individual::s_id = 0;
+class SPI: public Audience {
+	std::shared_ptr<spdlog::logger> _logger;
+	std::thread spiListenerThread;
 
-Individual::Individual(const std::map<std::string, std::map<std::string, std::string>> instructions):
-	_logger(spdlog::get("log")),
-	_id(s_id++) {
-	// make instructions from initial config
+public:
+	SPI();
+	~SPI() = default;
 
-	decltype(instructions)::const_iterator it;
-    for (it = instructions.begin(); it != instructions.end(); ++it) {
-        std::string name = it->first;
-        std::map<std::string, std::string> expression = it->second;
-        _instructions.push_back(Instruction(name, expression));
-    }
-}
-
-Individual::Individual(const Instructions instructions):
-	_logger(spdlog::get("log")),
-    _instructions(instructions),
-    _id(s_id++) {
-    	// empty constructor
-}
-
-Instruction Individual::instruction(const std::string& name) const noexcept {
-    for (const Instruction& instruction : _instructions) {
-        if (instruction.name() == name) {
-            return instruction;
-        }
-    }
-    return Instruction();
-}
-
-Instructions Individual::instructions() const noexcept {
-	// perhaps stream something?
-	// Either way, give instructions to musician
-	return _instructions;
-}
+	bool prepare() final;
+};
 
 }  // namespace audiogene
