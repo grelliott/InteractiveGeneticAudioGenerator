@@ -95,7 +95,7 @@ double Population::similarity(const Individual& individual) {
 }
 
 void Population::sortPopulation() {
-	std::sort(mIndividuals.begin(), mIndividuals.end(), [] (const Individual& lhs, const Individual& rhs) -> bool {
+	std::sort(mIndividuals.begin(), mIndividuals.end(), [this] (const Individual& lhs, const Individual& rhs) -> bool {
         return (similarity(lhs) / lhs.instructions().size()) > (similarity(rhs) / rhs.instructions().size());
     });
 }
