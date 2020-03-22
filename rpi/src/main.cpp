@@ -37,6 +37,7 @@
 
 #include "osc.hpp"
 #include "spi.hpp"
+#include "midi.hpp"
 #include "individual.hpp"
 #include "musician.hpp"
 #include "audience.hpp"
@@ -62,6 +63,7 @@ int main(int argc, char* argv[]) {
     try {
         // Initialize logging
         logger = spdlog::basic_logger_st("log", FLAGS_log, true);
+        logger->set_level(spdlog::level::debug);
         logger->info("Logging initialized");
     } catch (const spdlog::spdlog_ex& ex) {
         std::cout << "Log initialization failed: " << ex.what() << std::endl;
@@ -78,6 +80,11 @@ int main(int argc, char* argv[]) {
     // load config
     YAML::Node config = YAML::LoadFile(FLAGS_config);
     logger->info("Config loaded: {}", config["name"]);
+
+    // TODO initialize SuperCollider itself
+    // add config for server config
+    // start up jackd
+    // wait for message from SC that it's ready then continue
 
 
    	//TODO don't fix output to a specific protocol
@@ -96,18 +103,37 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<audiogene::Musician> musician(new audiogene::OSC(scNode["addr"].as<std::string>(), scNode["port"].as<std::string>()));
 	std::cout << "SC is ready" << std::endl;
 
-    //TODO don't fix input to a given protocol
-    // Consider consuming MIDI and mapping that to each attribute
-    // use an interface an instance of an input needs to honour
 
     // Initialize input
-    //Audience audience = Midi();
-	std::shared_ptr<audiogene::Audience> audience(new audiogene::SPI());
-	//TODO test result
+    // Get input type from config
+    std::shared_ptr<audiogene::Audience> audience;
+    if (!config["input"]) {
+    	// default to SPI input
+		audience.reset(new audiogene::SPI());
+    } else {
+		YAML::Node inputNode = config["input"];
+		if (!inputNode["map"]) {
+			// we need a map...
+			logger->error("Missing input mappings!");
+			return -1;
+		}
+		std::map<std::string, std::map<std::string, std::string>> mapping = inputNode["map"].as<std::map<std::string, std::map<std::string, std::string>>>();
+		if (inputNode["type"].as<std::string>() == "midi") {
+			logger->info("Input type is MIDI");
+			if (inputNode["name"]) {
+				audience.reset(new audiogene::MIDI(inputNode["name"].as<std::string>(), mapping));
+			} else {
+				audience.reset(new audiogene::MIDI("", mapping));
+			}
+		}
+    }
+
 	if (!audience->prepare()) {
 		logger->error("Failed to prepare input!");
 		return -1;
 	}
+	logger->info("Input prepared");
+
 
     // Initialize genetics
     if (!config["genes"]) {
@@ -129,8 +155,13 @@ int main(int argc, char* argv[]) {
     // An audience gives feedback on various criteria
     // The population takes that feedback and determines which of its individuals best represent that feedback
     // and the next attempt tries to meet these expectations
+
+    // Initialize preferences of audience
+    audience->initializePreferences(attributes);
+
     // Connect audience to population
     //pop.setAudience(audience);
+
 
     // Initialize the founder generation
     audiogene::Individual seed(attributes);
@@ -147,7 +178,7 @@ int main(int argc, char* argv[]) {
     musician->receiveInstructions(conductor.instructions());
 
 
-    // Run the thing
+	// Run the thing
     uint8_t loops = 16;
     uint8_t topN = config["keepFittest"].as<int>();
     uint8_t i = 0;
@@ -165,6 +196,5 @@ int main(int argc, char* argv[]) {
     }
 
     stop = 1;
-    //spiListener.join();
     return 0;
 }

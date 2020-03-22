@@ -3,6 +3,16 @@ name: Test
 SuperCollider:
     addr: 127.0.0.1
     port: 57120
+input:
+    type: midi
+    name: "Oxygen 25"
+    map:
+        "tempo":
+            down: 48
+            up: 49
+        "scale":
+            down: 50
+            up: 51
 populationSize: 8
 keepFittest: 4
 genes:

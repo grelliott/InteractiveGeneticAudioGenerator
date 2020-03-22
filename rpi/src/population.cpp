@@ -42,7 +42,6 @@ Population::Population(const uint8_t n, const Individual& seed, const std::share
 
 	_logger->info("Making {} individuals from {}", n, seed);
     initializePopulation(seed);
-
     // For cross-breeding, randomly pick each of the attribute's values between two parents
     // For mutation, determine some threshold for mutations to occur,
     // and some deviation from the current value that a mutation could result it
@@ -52,16 +51,17 @@ Population::Population(const uint8_t n, const Individual& seed, const std::share
 }
 
 void Population::initializePopulation(const Individual& seed) {
-    // we need to make mSize copies of seed and put them into the collection of Individuals
-    for (int i = 0; i < mSize; i++) {
-        Instructions newInstructions = {};
-        // Go through each Preference in the seed and determine a new value based on a random standard deviation
-        //TODO change this from iterating on the seed to the seed's instructions
-        for (Instructions::const_iterator it = seed.instructions().cbegin(); it != seed.instructions().cend(); ++it) {
-        	// The seed's instruction
-            std::string name(it->name());
-            Expression expression(it->expression());
+	// we need to make mSize copies of seed and put them into the collection of Individuals
+    for (size_t i = 0; i < mSize; ++i) {
 
+        Instructions newInstructions;
+        // Go through each Preference in the seed and determine a new value based on a random standard deviation
+        for (Instruction const& instruction: seed.instructions()) {
+        	//Instruction instruction = it;
+        	// The seed's instruction
+
+            AttributeName name(instruction.name());
+            Expression expression(instruction.expression());
             // this can be pulled out into a new method
             // it's getting a new expression over a normal distribution
             //TODO get stddev from expression somehow...?
@@ -77,7 +77,6 @@ void Population::initializePopulation(const Individual& seed) {
                 v = std::round(v);
             }
             expression.current = v;
-
             newInstructions.emplace_back(Instruction(name, expression));
         }
         mIndividuals.emplace_back(Individual(newInstructions));
@@ -129,8 +128,9 @@ Individual Population::breed(std::pair<Individual, Individual> parents) {
     // Or determine some new value based on the two of the parents
     // For now, go basic and just pick one
 
-    for (Instructions::const_iterator it = parents.first.instructions().cbegin(); it != parents.first.instructions().cend(); ++it) {
-        const Instruction parent1Instruction = *it;
+    //for (Instructions::const_iterator it = parents.first.instructions().cbegin(); it != parents.first.instructions().cend(); ++it) {
+	for (Instruction const& parent1Instruction: parents.first.instructions()) {
+        //const Instruction parent1Instruction = *it;
         const Instruction parent2Instruction = parents.second.instruction(parent1Instruction.name());
         std::string instructionName = parent1Instruction.name();
 

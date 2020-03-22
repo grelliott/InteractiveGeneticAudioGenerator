@@ -54,7 +54,7 @@ class Population {
 
     Individuals mIndividuals;
 
-    const uint8_t mSize;
+    const size_t mSize;
     uint8_t mGeneration;
 
     // When it's time to create a new generation, get preferences from the audience
