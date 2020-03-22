@@ -93,7 +93,10 @@ int main(int argc, char* argv[]) {
     // The conductor is the most suitable individual from the current generation
     // it will them tell the audio player the criteria to use for playing
 
-    // Initialize output (OSC -> SuperCollider)
+    //
+    // Initialize output
+    //
+    // (OSC -> SuperCollider)
     if (!config["SuperCollider"]) {
         std::cout << "Missing SuperCollider config" << std::endl;
         return -1;
@@ -104,8 +107,9 @@ int main(int argc, char* argv[]) {
 	std::cout << "SC is ready" << std::endl;
 
 
+    //
     // Initialize input
-    // Get input type from config
+    //
     std::shared_ptr<audiogene::Audience> audience;
     if (!config["input"]) {
     	// default to SPI input
@@ -135,7 +139,9 @@ int main(int argc, char* argv[]) {
 	logger->info("Input prepared");
 
 
+    //
     // Initialize genetics
+    //
     if (!config["genes"]) {
         logger->error("Missing required config item {}", "genes");
         return -1;
@@ -159,19 +165,12 @@ int main(int argc, char* argv[]) {
     // Initialize preferences of audience
     audience->initializePreferences(attributes);
 
-    // Connect audience to population
-    //pop.setAudience(audience);
-
 
     // Initialize the founder generation
     audiogene::Individual seed(attributes);
     audiogene::Population pop(config["populationSize"].as<int>(), seed, audience);
     logger->info("Initial population: {}", pop);
 
-
-	// pop.onPreferencesUpdated(audience.preferencesUpdated());
-
-    //TODO Use streams to link Population and OSC
 
     // Attach population to output
     audiogene::Individual conductor = pop.fittest();
@@ -184,6 +183,9 @@ int main(int argc, char* argv[]) {
     uint8_t i = 0;
 
     // Make new generations
+    // TODO use some sequencing mechanism from SC to signal when to ask for a
+    // new generation
+    // eg every phrase or something (8 bars? 16/32/64?)
     while (i < loops && stop == 0) {
         std::cout << "loop " << +i << std::endl;
         logger->info("Getting new generation from top {} individuals", topN);

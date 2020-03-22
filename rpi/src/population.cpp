@@ -53,16 +53,16 @@ Population::Population(const uint8_t n, const Individual& seed, const std::share
 void Population::initializePopulation(const Individual& seed) {
 	// we need to make mSize copies of seed and put them into the collection of Individuals
     for (size_t i = 0; i < mSize; ++i) {
-
         Instructions newInstructions;
         // Go through each Preference in the seed and determine a new value based on a random standard deviation
         for (Instruction const& instruction: seed.instructions()) {
-        	//Instruction instruction = it;
         	// The seed's instruction
 
             AttributeName name(instruction.name());
             Expression expression(instruction.expression());
+
             // this can be pulled out into a new method
+            // Genetics::create(mean)
             // it's getting a new expression over a normal distribution
             //TODO get stddev from expression somehow...?
             double stddev = 1.0;
@@ -83,23 +83,20 @@ void Population::initializePopulation(const Individual& seed) {
     }
 }
 
-double Population::similarity(const Individual& indvidual) {
+double Population::similarity(const Individual& individual) {
 	double similarity = 0;
-    for (Instructions::const_iterator it = indvidual.instructions().cbegin(); it != indvidual.instructions().cend(); ++it) {
-        const double curVal = it->expression().current;
-        const double ideal = mAudience->preferences()[it->name()].current;
-        double sim = 1 - (std::abs(ideal - curVal)) / (it->expression().max - it->expression().min);
-        similarity += sim;
+	for (const Instruction& instruction: individual.instructions()) {
+        const double curVal = instruction.expression().current;
+        const double ideal = mAudience->preferences()[instruction.name()].current;
+        similarity += 1 - (std::abs(ideal - curVal))
+                        / (instruction.expression().max - instruction.expression().min);
     }
     return similarity;
 }
 
 void Population::sortPopulation() {
-	std::sort(mIndividuals.begin(), mIndividuals.end(), [&] (const Individual& lhs, const Individual& rhs) -> bool {
-        float lhsSimilarity = similarity(lhs);
-        float rhsSimilarity = similarity(rhs);
-        const uint8_t instructionCount = lhs.instructions().size();
-        return (lhsSimilarity/instructionCount) > (rhsSimilarity/instructionCount);
+	std::sort(mIndividuals.begin(), mIndividuals.end(), [] (const Individual& lhs, const Individual& rhs) -> bool {
+        return (similarity(lhs) / lhs.instructions().size()) > (similarity(rhs) / rhs.instructions().size());
     });
 }
 
@@ -200,6 +197,7 @@ void Population::nextGeneration(const uint8_t n) {
         Individual newChild = breed(parents);
         mIndividuals.emplace_back(newChild);
     }
+    sortPopulation();
 }
 
 const Individual Population::fittest() {
