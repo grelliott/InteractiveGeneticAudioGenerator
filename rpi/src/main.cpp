@@ -81,13 +81,13 @@ int main(int argc, char* argv[]) {
     YAML::Node config = YAML::LoadFile(FLAGS_config);
     logger->info("Config loaded: {}", config["name"]);
 
-    // TODO initialize SuperCollider itself
+    // TODO(grant) initialize SuperCollider itself
     // add config for server config
     // start up jackd
     // wait for message from SC that it's ready then continue
 
 
-   	//TODO don't fix output to a specific protocol
+    // TODO(grant) don't fix output to a specific protocol
     // We're trying to "conduct" an audio performance
     // by telling it how to play
     // The conductor is the most suitable individual from the current generation
@@ -103,8 +103,9 @@ int main(int argc, char* argv[]) {
     }
     YAML::Node scNode = config["SuperCollider"];
     std::cout << "Initializing OSC" << std::endl;
-    std::unique_ptr<audiogene::Musician> musician(new audiogene::OSC(scNode["addr"].as<std::string>(), scNode["port"].as<std::string>()));
-	std::cout << "SC is ready" << std::endl;
+    std::unique_ptr<audiogene::Musician> musician(
+        new audiogene::OSC(scNode["addr"].as<std::string>(), scNode["port"].as<std::string>()));
+    std::cout << "SC is ready" << std::endl;
 
 
     //
@@ -112,31 +113,32 @@ int main(int argc, char* argv[]) {
     //
     std::shared_ptr<audiogene::Audience> audience;
     if (!config["input"]) {
-    	// default to SPI input
-		audience.reset(new audiogene::SPI());
+        // default to SPI input
+        audience.reset(new audiogene::SPI());
     } else {
-		YAML::Node inputNode = config["input"];
-		if (!inputNode["map"]) {
-			// we need a map...
-			logger->error("Missing input mappings!");
-			return -1;
-		}
-		std::map<std::string, std::map<std::string, std::string>> mapping = inputNode["map"].as<std::map<std::string, std::map<std::string, std::string>>>();
-		if (inputNode["type"].as<std::string>() == "midi") {
-			logger->info("Input type is MIDI");
-			if (inputNode["name"]) {
-				audience.reset(new audiogene::MIDI(inputNode["name"].as<std::string>(), mapping));
-			} else {
-				audience.reset(new audiogene::MIDI("", mapping));
-			}
-		}
+        YAML::Node inputNode = config["input"];
+        if (!inputNode["map"]) {
+            // we need a map...
+            logger->error("Missing input mappings!");
+            return -1;
+        }
+        std::map<std::string, std::map<std::string, std::string>> mapping =
+            inputNode["map"].as<std::map<std::string, std::map<std::string, std::string>>>();
+        if (inputNode["type"].as<std::string>() == "midi") {
+            logger->info("Input type is MIDI");
+            if (inputNode["name"]) {
+                audience.reset(new audiogene::MIDI(inputNode["name"].as<std::string>(), mapping));
+            } else {
+                audience.reset(new audiogene::MIDI("", mapping));
+            }
+        }
     }
 
-	if (!audience->prepare()) {
-		logger->error("Failed to prepare input!");
-		return -1;
-	}
-	logger->info("Input prepared");
+    if (!audience->prepare()) {
+        logger->error("Failed to prepare input!");
+        return -1;
+    }
+    logger->info("Input prepared");
 
 
     //
@@ -176,13 +178,13 @@ int main(int argc, char* argv[]) {
     // Attach population to output
     musician->setConductor(pop.fittest());
 
-	// Run the thing
+    // Run the thing
     uint8_t loops = 16;
     uint8_t topN = config["keepFittest"].as<int>();
     uint8_t i = 0;
 
     // Make new generations
-    // TODO use some sequencing mechanism from SC to signal when to ask for a
+    // TODO(grant) use some sequencing mechanism from SC to signal when to ask for a
     // new generation
     // eg every phrase or something (8 bars? 16/32/64?)
     while (i < loops && stop == 0) {
@@ -190,7 +192,7 @@ int main(int argc, char* argv[]) {
         logger->info("Getting new generation from top {} individuals", topN);
         pop.nextGeneration(topN);
         logger->info("New population: {}", pop);
-        //TODO Get audience preferences here...?
+        // TODO(grant) Get audience preferences here...?
         musician->setConductor(pop.fittest(/* audience.preferences() */));
         sleep(8);
         i++;

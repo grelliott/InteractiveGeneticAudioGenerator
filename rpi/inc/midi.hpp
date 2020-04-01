@@ -25,29 +25,29 @@
 #include <spdlog/spdlog.h>
 #include <RtMidi.h>
 
+#include <string>
 #include <map>
 #include <utility>
 #include <memory>
 
 #include "audience.hpp"
-#include "preference.hpp"
 
 namespace audiogene {
 
 class MIDI: public Audience {
-	std::shared_ptr<spdlog::logger> _logger;
-	const std::string& _name;
-	// key => {attribute, direction}
-	std::map<int, std::pair<AttributeName, int>> _mapping;
-	std::unique_ptr<RtMidiIn> midiin;
+    std::shared_ptr<spdlog::logger> _logger;
+    const std::string& _name;
+    // key => {attribute, direction}
+    std::map<int, std::pair<AttributeName, int>> _mapping;
+    std::unique_ptr<RtMidiIn> midiin;
 
-public:
-	MIDI();
-	// mapping is {"attribute": {"direction":"key"},...}
-	MIDI(const std::string& name, const std::map<AttributeName, std::map<std::string, std::string>> mapping);
-	~MIDI() = default;
+ public:
+    MIDI();
+    // mapping is {"attribute": {"direction":"key"},...}
+    MIDI(const std::string& name, const std::map<AttributeName, std::map<std::string, std::string>> mapping);
+    ~MIDI() = default;
 
-	bool prepare() final;
+    bool prepare() final;
 };
 
 }  // namespace audiogene

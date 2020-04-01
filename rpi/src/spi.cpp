@@ -29,7 +29,7 @@
 namespace audiogene {
 
 SPI::SPI() {
-	_logger = spdlog::get("log");
+    _logger = spdlog::get("log");
 }
 
 bool SPI::prepare() {
@@ -41,31 +41,30 @@ bool SPI::prepare() {
     } else {
         // make a new thread to listen to SPI
         spiListenerThread = std::thread([this] () {
-		    unsigned char buf[2];
-		    memset(buf, 0, 2);
-		    buf[0] = 0x80;
-		    // TODO change to some broadcast mechanism
-		    int stop = 0;
-		    // main loop
-		    while (stop == 0) {
-		        buf[0] = 0x80;
-		        wiringPiSPIDataRW(0, buf, 1);
-		        if (buf[0] != 0) {
-		            unsigned char data = buf[0];
-		            // loop through bits to see which are set
-		            for (size_t i = 0; i < sizeof(data) * 8; i++) {
-		                if (data & 1 << i) {
-		                    _logger->info("Received data from controller {}", i);
-		                    //TODO actually determine which preference was updated and update
-		                    preferenceUpdated("", {});
-		                }
-		            }
-		        }
-		        sleep(1);
-		    }
-
-		});
-		return true;
+            unsigned char buf[2];
+            memset(buf, 0, 2);
+            buf[0] = 0x80;
+            // TODO(grant) change to some broadcast mechanism
+            int stop = 0;
+            // main loop
+            while (stop == 0) {
+                buf[0] = 0x80;
+                wiringPiSPIDataRW(0, buf, 1);
+                if (buf[0] != 0) {
+                    unsigned char data = buf[0];
+                    // loop through bits to see which are set
+                    for (size_t i = 0; i < sizeof(data) * 8; i++) {
+                        if (data & 1 << i) {
+                            _logger->info("Received data from controller {}", i);
+                            // TODO(grant) actually determine which preference was updated and update
+                            preferenceUpdated("", {});
+                        }
+                    }
+                }
+                sleep(1);
+            }
+        });
+        return true;
     }
 }
 

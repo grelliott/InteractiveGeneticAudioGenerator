@@ -33,29 +33,32 @@
 
 namespace audiogene {
 
-Population::Population(const uint8_t n, const Individual& seed, const double mutationProbability, const std::shared_ptr<Audience> audience):
-	    _logger(spdlog::get("log")),
-	    _genetics(mutationProbability),
-	    mSize(n),
-	    mIndividuals(mSize),
-	    mGeneration(0),
-	    mAudience(audience) {
-	_logger->info("Initializing RNG");
+Population::Population(const uint8_t n,
+                       const Individual& seed,
+                       const double mutationProbability,
+                       const std::shared_ptr<Audience> audience):
+        _logger(spdlog::get("log")),
+        _genetics(mutationProbability),
+        mSize(n),
+        mIndividuals(mSize),
+        mGeneration(0),
+        mAudience(audience) {
+    _logger->info("Initializing RNG");
     mRng.seed(std::chrono::system_clock::now().time_since_epoch().count());
 
-	_logger->info("Making {} individuals from {}", n, seed);
+    _logger->info("Making {} individuals from {}", n, seed);
     initializePopulation(seed);
 }
 
 void Population::initializePopulation(const Individual& seed) {
-	std::generate(mIndividuals.begin(), mIndividuals.end(), [this, seed] () -> Individual {
-		return Individual(seed);
-	});
+    std::generate(mIndividuals.begin(), mIndividuals.end(), [this, seed] () -> Individual {
+        return Individual(seed);
+    });
 }
 
 double Population::similarity(const Individual& individual) {
     double similarity = 0;
-    for (const std::pair<AttributeName, Instruction>& i: individual.instructions()) {
+    for (const std::pair<AttributeName, Instruction>& i : individual.instructions()) {
         Instruction instruction = i.second;
         const double curVal = instruction.expression().current;
         const double ideal = mAudience->preferences()[instruction.name()].current;
@@ -90,7 +93,8 @@ std::pair<Individual, Individual> Population::getParents(Individuals fittest) {
 }
 
 Individual Population::breed(std::pair<Individual, Individual> parents) {
-    return Individual(_genetics.mutate(_genetics.combine(std::make_pair(parents.first.instructions(), parents.second.instructions()))));
+    return Individual(_genetics.mutate(
+        _genetics.combine(std::make_pair(parents.first.instructions(), parents.second.instructions()))));
 }
 
 void Population::nextGeneration(const uint8_t topN) {

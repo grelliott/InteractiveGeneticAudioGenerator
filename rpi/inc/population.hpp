@@ -25,8 +25,7 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
 
-#include <set>
-#include <map>
+#include <vector>
 #include <utility>
 #include <algorithm>
 #include <random>
@@ -69,7 +68,7 @@ class Population {
     Population(const uint8_t n, const Individual& seed, const double mutationProbability, const std::shared_ptr<Audience> audience);
     ~Population() = default;
 
-	const Individual fittest();
+    const Individual fittest();
 
     void nextGeneration(const uint8_t n);
 
@@ -81,7 +80,6 @@ class Population {
         }
         return os;
     }
-
 };
 
 }  // namespace audiogene

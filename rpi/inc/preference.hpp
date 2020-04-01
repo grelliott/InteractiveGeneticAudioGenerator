@@ -29,7 +29,7 @@
 namespace audiogene {
 
 struct Preference {
-	double min;
+    double min;
     double max;
     double current;
 };

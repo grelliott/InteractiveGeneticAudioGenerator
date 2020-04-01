@@ -29,6 +29,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <utility>
 
 #include "instruction.hpp"
 
@@ -41,7 +42,7 @@ class Individual {
 
     static uint32_t s_id;
  public:
-    Individual() {};
+    Individual() {}
     /*! Create an individual from config values */
     explicit Individual(const std::map<std::string, std::map<std::string, std::string>> instructions);
     explicit Individual(const Instructions instructions);

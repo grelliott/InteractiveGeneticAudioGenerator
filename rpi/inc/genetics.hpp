@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <utility>
 #include <memory>
 
 #include "instruction.hpp"
@@ -29,24 +30,24 @@
 namespace audiogene {
 
 class Genetics {
-	// forward-declare implementation class
-	class Impl;
-	std::unique_ptr<Impl> _impl;
-	const Impl* Pimpl() const { return _impl.get(); }
-	Impl* Pimpl() { return _impl.get(); }
-public:
-	explicit Genetics(const double mutationProbability);
-	~Genetics();
+    // forward-declare implementation class
+    class Impl;
+    std::unique_ptr<Impl> _impl;
+    const Impl* Pimpl() const { return _impl.get(); }
+    Impl* Pimpl() { return _impl.get(); }
+ public:
+    explicit Genetics(const double mutationProbability);
+    ~Genetics();
 
-	Genetics(Genetics&& rhs) noexcept;
-	Genetics& operator=(Genetics&& rhs) noexcept;
+    Genetics(Genetics&& rhs) noexcept;
+    Genetics& operator=(Genetics&& rhs) noexcept;
 
-	Genetics(const Genetics& rhs);
-	Genetics& operator=(const Genetics& rhs);
+    Genetics(const Genetics& rhs);
+    Genetics& operator=(const Genetics& rhs);
 
-	Instructions create(const Instructions seed) const noexcept;
-	Instructions combine(const std::pair<Instructions, Instructions>& parents) const noexcept;
-	Instructions mutate(const Instructions instructions) const noexcept;
+    Instructions create(const Instructions seed) const noexcept;
+    Instructions combine(const std::pair<Instructions, Instructions>& parents) const noexcept;
+    Instructions mutate(const Instructions instructions) const noexcept;
 };
 
 }  // namespace audiogene

@@ -25,19 +25,18 @@
 #include <spdlog/spdlog.h>
 
 #include "audience.hpp"
-#include "preference.hpp"
 
 namespace audiogene {
 
 class SPI: public Audience {
-	std::shared_ptr<spdlog::logger> _logger;
-	std::thread spiListenerThread;
+    std::shared_ptr<spdlog::logger> _logger;
+    std::thread spiListenerThread;
 
-public:
-	SPI();
-	~SPI() = default;
+ public:
+    SPI();
+    ~SPI() = default;
 
-	bool prepare() final;
+    bool prepare() final;
 };
 
 }  // namespace audiogene

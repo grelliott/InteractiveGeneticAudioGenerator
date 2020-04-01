@@ -32,7 +32,7 @@ Instruction::Instruction(AttributeName name, Expression expression) :
 }
 
 Instruction::Instruction(AttributeName name, std::map<std::string, std::string> expression) :
-		mName(name) {
+        mName(name) {
     mExpression = {};
     mExpression.min = std::stoi(expression["min"]);
     mExpression.max = std::stoi(expression["max"]);

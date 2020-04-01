@@ -34,33 +34,33 @@ OSC::OSC():
     OSC(nullptr, "57120") {}
 
 OSC::OSC(const std::string& serverIp, const std::string& serverPort):
-		_logger(spdlog::get("log")),
-	    serverAddr(lo_address_new(serverIp.c_str(), serverPort.c_str())),
-	    st(9000) {
-	if (!st.is_valid()) {
-		_logger->warn("Invalid OSC Server");
-    	return;
+        _logger(spdlog::get("log")),
+        serverAddr(lo_address_new(serverIp.c_str(), serverPort.c_str())),
+        st(9000) {
+    if (!st.is_valid()) {
+        _logger->warn("Invalid OSC Server");
+        return;
     }
 
-	std::promise<void> isReadyPromise;
-	std::future<void> isReady(isReadyPromise.get_future());
+    std::promise<void> isReadyPromise;
+    std::future<void> isReady(isReadyPromise.get_future());
 
     st.set_callbacks([this, &isReadyPromise] () {
-    	_logger->info("OSC Thread started");
-    	isReadyPromise.set_value();
+    _logger->info("OSC Thread started");
+        isReadyPromise.set_value();
     },
-    				 [this] () {
-		_logger->info("OSC Thread finished");
-	});
+                    [this] () {
+        _logger->info("OSC Thread finished");
+    });
 
-	st.add_method("done", "s", [this] (lo_arg **argv, int len) {
-		(void)len;
-		_logger->info("Done: %s", argv[0]->s);
-	});
+    st.add_method("done", "s", [this] (lo_arg **argv, int len) {
+        (void)len;
+        _logger->info("Done: %s", argv[0]->s);
+    });
 
-	st.start();
+    st.start();
 
-	// Notify SuperCollider we're ready
+    // Notify SuperCollider we're ready
     lo_send(serverAddr, "/notify", "i", 1);
 
     // Wait until we've started and the promise is set
@@ -70,7 +70,7 @@ OSC::OSC(const std::string& serverIp, const std::string& serverPort):
 
 void OSC::setConductor(const Individual& conductor) {
     _logger->info("Setting new conductor {}", conductor);
-    //TODO just handle intructions here
+    // TODO(grant) just handle intructions here
     // for (Instructions::const_iterator it = instructions.cbegin(); it != instructions.cend(); ++it) {
     //     lo_send(serverAddr, std::string("/gene/"+it->name()).c_str(), "f", it->expression().current);
     // }
