@@ -167,15 +167,14 @@ int main(int argc, char* argv[]) {
 
 
     // Initialize the founder generation
+    double mutationProbability = config["mutationProb"].as<double>();
     audiogene::Individual seed(attributes);
-    audiogene::Population pop(config["populationSize"].as<int>(), seed, audience);
+    audiogene::Population pop(config["populationSize"].as<int>(), seed, mutationProbability, audience);
     logger->info("Initial population: {}", pop);
 
 
     // Attach population to output
-    audiogene::Individual conductor = pop.fittest();
-    musician->receiveInstructions(conductor.instructions());
-
+    musician->setConductor(pop.fittest());
 
 	// Run the thing
     uint8_t loops = 16;

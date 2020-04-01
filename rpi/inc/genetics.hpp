@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Grant Elliott <grant@grantelliott.ca>
+ * Copyright 2020 Grant Elliott <grant@grantelliott.ca>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -22,42 +22,31 @@
 
 #pragma once
 
-#include <spdlog/spdlog.h>
-#include <spdlog/fmt/ostr.h>
-
-#include <iostream>
-#include <vector>
-#include <string>
-#include <map>
+#include <memory>
 
 #include "instruction.hpp"
 
 namespace audiogene {
 
-class Individual {
-    std::shared_ptr<spdlog::logger> _logger;
-    Instructions _instructions;
-    uint32_t _id;
+class Genetics {
+	// forward-declare implementation class
+	class Impl;
+	std::unique_ptr<Impl> _impl;
+	const Impl* Pimpl() const { return _impl.get(); }
+	Impl* Pimpl() { return _impl.get(); }
+public:
+	explicit Genetics(const double mutationProbability);
+	~Genetics();
 
-    static uint32_t s_id;
- public:
-    Individual() {};
-    /*! Create an individual from config values */
-    explicit Individual(const std::map<std::string, std::map<std::string, std::string>> instructions);
-    explicit Individual(const Instructions instructions);
-    ~Individual() = default;
+	Genetics(Genetics&& rhs) noexcept;
+	Genetics& operator=(Genetics&& rhs) noexcept;
 
-    Instructions instructions() const noexcept;
-    Instruction instruction(const std::string& name) const noexcept;
+	Genetics(const Genetics& rhs);
+	Genetics& operator=(const Genetics& rhs);
 
-    template<typename OStream>
-    friend OStream &operator<<(OStream &os, const Individual &obj) {
-        os << "Individual " << obj._id << std::endl;
-        for (const std::pair<AttributeName, Instruction> &i : obj._instructions) {
-            os << "\t" << i.second << "\n";
-        }
-        return os;
-    }
+	Instructions create(const Instructions seed) const noexcept;
+	Instructions combine(const std::pair<Instructions, Instructions>& parents) const noexcept;
+	Instructions mutate(const Instructions instructions) const noexcept;
 };
 
 }  // namespace audiogene

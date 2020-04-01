@@ -33,6 +33,7 @@
 #include <memory>
 
 #include "individual.hpp"
+#include "genetics.hpp"
 #include "audience.hpp"
 
 namespace audiogene {
@@ -41,20 +42,12 @@ using Individuals = std::vector<Individual>;
 
 class Population {
     std::shared_ptr<spdlog::logger> _logger;
-
-    // Perhaps there should be a new class to perform
-    // breeding on the population?
-    std::default_random_engine mRng;
-
-    // The population shouldn't have this
-    // Instead, it should store new members of a generation
-    // in a vector, and use the preferences of the audience
-    // as the source for a sorter on said vector
-    //FitnessSorter mSorter;
-
-    Individuals mIndividuals;
+    mutable std::default_random_engine mRng;
+    const Genetics _genetics;
 
     const size_t mSize;
+    Individuals mIndividuals;
+
     uint8_t mGeneration;
 
     // When it's time to create a new generation, get preferences from the audience
@@ -73,12 +66,11 @@ class Population {
 
  public:
     Population() = delete;
-    Population(const uint8_t n, const Individual& seed, const std::shared_ptr<Audience> audience);
+    Population(const uint8_t n, const Individual& seed, const double mutationProbability, const std::shared_ptr<Audience> audience);
     ~Population() = default;
 
 	const Individual fittest();
 
-    // Not quite sure how this fits in here, needs renaming
     void nextGeneration(const uint8_t n);
 
     template<typename OStream>

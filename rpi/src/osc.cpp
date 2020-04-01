@@ -68,15 +68,13 @@ OSC::OSC(const std::string& serverIp, const std::string& serverPort):
     _logger->info("OSC Initialized. {}:{}", serverIp, serverPort);
 }
 
-void OSC::receiveInstructions(const Instructions& instructions) {
-	for (Instructions::const_iterator it = instructions.cbegin(); it != instructions.cend(); ++it) {
-	    lo_send(serverAddr, std::string("/gene/"+it->name()).c_str(), "f", it->expression().current);
-	}
-}
-
 void OSC::setConductor(const Individual& conductor) {
     _logger->info("Setting new conductor {}", conductor);
-    receiveInstructions(conductor.instructions());
+    //TODO just handle intructions here
+    // for (Instructions::const_iterator it = instructions.cbegin(); it != instructions.cend(); ++it) {
+    //     lo_send(serverAddr, std::string("/gene/"+it->name()).c_str(), "f", it->expression().current);
+    // }
+//    receiveInstructions(conductor.instructions());
 }
 
 bool OSC::send(const std::string& path, const std::string& msg) {

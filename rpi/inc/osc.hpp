@@ -47,7 +47,6 @@ class OSC: public Musician {
     OSC(const std::string& serverIp, const std::string& serverPort);
     ~OSC() = default;
 
-    void receiveInstructions(const Instructions& instructions) final;
     void setConductor(const Individual& conductor) final;
 };
 

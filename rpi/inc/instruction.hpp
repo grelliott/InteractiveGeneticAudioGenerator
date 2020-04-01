@@ -70,7 +70,7 @@ class Instruction {
     }
 };
 
-using Instructions = std::vector<Instruction>;
+using Instructions = std::map<AttributeName, Instruction>;
 
 }  // namespace audiogene
 

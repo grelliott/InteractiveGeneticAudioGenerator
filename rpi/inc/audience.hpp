@@ -55,6 +55,8 @@ public:
 		}
 	}
 
+	// rate-limit how often input buttons can have an effect on the criteria,
+	// and how strong an effect it has on moving the criteria
 	void preferenceUpdated(const AttributeName name, const Preference& preference) {
 		try {
 			mPreferences.at(name) = preference;

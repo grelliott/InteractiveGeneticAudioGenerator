@@ -42,7 +42,7 @@ Individual::Individual(const std::map<std::string, std::map<std::string, std::st
     for (it = instructions.begin(); it != instructions.end(); ++it) {
         std::string name = it->first;
         std::map<std::string, std::string> expression = it->second;
-        _instructions.push_back(Instruction(name, expression));
+        _instructions[name] = Instruction(name, expression);
     }
 }
 
@@ -54,12 +54,11 @@ Individual::Individual(const Instructions instructions):
 }
 
 Instruction Individual::instruction(const std::string& name) const noexcept {
-    for (const Instruction& instruction : _instructions) {
-        if (instruction.name() == name) {
-            return instruction;
-        }
-    }
+    try {
+        return _instructions.at(name);
+    } catch (const std::out_of_range& e) {
     return Instruction();
+    }
 }
 
 Instructions Individual::instructions() const noexcept {

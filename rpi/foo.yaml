@@ -13,8 +13,9 @@ input:
         "scale":
             down: 50
             up: 51
-populationSize: 8
-keepFittest: 4
+populationSize: 24
+keepFittest: 8
+mutationProb: 0.05
 genes:
     "tempo":
         min: 80
