@@ -90,8 +90,6 @@ int main(int argc, char* argv[]) {
     // TODO(grant) don't fix output to a specific protocol
     // We're trying to "conduct" an audio performance
     // by telling it how to play
-    // The conductor is the most suitable individual from the current generation
-    // it will them tell the audio player the criteria to use for playing
 
     //
     // Initialize output
@@ -174,6 +172,8 @@ int main(int argc, char* argv[]) {
     audiogene::Population pop(config["populationSize"].as<int>(), seed, mutationProbability, audience);
     logger->info("Initial population: {}", pop);
 
+    // The conductor is the most suitable individual from the current generation
+    // it will them tell the audio player the criteria to use for playing
 
     // Attach population to output
     musician->setConductor(pop.fittest());
@@ -192,8 +192,7 @@ int main(int argc, char* argv[]) {
         logger->info("Getting new generation from top {} individuals", topN);
         pop.nextGeneration(topN);
         logger->info("New population: {}", pop);
-        // TODO(grant) Get audience preferences here...?
-        musician->setConductor(pop.fittest(/* audience.preferences() */));
+        musician->setConductor(pop.fittest());
         sleep(8);
         i++;
     }
