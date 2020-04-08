@@ -33,6 +33,7 @@
 #include <vector>
 #include <functional>
 #include <thread>
+#include <future>
 #include <csignal>
 
 #include "osc.hpp"
@@ -47,10 +48,11 @@
 DEFINE_string(config, "", "Configuration for the genetics");
 DEFINE_string(log, "out.log", "Logfile path");
 
-volatile sig_atomic_t stop = 0;
+volatile std::atomic<bool> stop(false);
+
 void breakHandler(int s) {
     (void)s;
-    stop = 1;
+    stop = true;
 }
 
 int main(int argc, char* argv[]) {
@@ -80,30 +82,6 @@ int main(int argc, char* argv[]) {
     // load config
     YAML::Node config = YAML::LoadFile(FLAGS_config);
     logger->info("Config loaded: {}", config["name"]);
-
-    // TODO(grant) initialize SuperCollider itself
-    // add config for server config
-    // start up jackd
-    // wait for message from SC that it's ready then continue
-
-
-    // TODO(grant) don't fix output to a specific protocol
-    // We're trying to "conduct" an audio performance
-    // by telling it how to play
-
-    //
-    // Initialize output
-    //
-    // (OSC -> SuperCollider)
-    if (!config["SuperCollider"]) {
-        std::cout << "Missing SuperCollider config" << std::endl;
-        return -1;
-    }
-    YAML::Node scNode = config["SuperCollider"];
-    std::cout << "Initializing OSC" << std::endl;
-    std::unique_ptr<audiogene::Musician> musician(
-        new audiogene::OSC(scNode["addr"].as<std::string>(), scNode["port"].as<std::string>()));
-    std::cout << "SC is ready" << std::endl;
 
 
     //
@@ -138,6 +116,30 @@ int main(int argc, char* argv[]) {
     }
     logger->info("Input prepared");
 
+    //
+    // Initialize output
+    //
+    // (OSC -> SuperCollider)
+    if (!config["SuperCollider"]) {
+        std::cout << "Missing SuperCollider config" << std::endl;
+        return -1;
+    }
+    YAML::Node scNode = config["SuperCollider"];
+    if (!config["OSC"]) {
+        std::cout << "Missing OSC config" << std::endl;
+        return -1;
+    }
+    YAML::Node oscNode = config["OSC"];
+
+    std::cout << "Initializing OSC" << std::endl;
+    std::unique_ptr<audiogene::Musician> musician(
+        new audiogene::OSC(oscNode["port"].as<std::string>(), scNode["addr"].as<std::string>(), scNode["port"].as<std::string>()));
+    //musician->waitForReady();
+    std::cout << "SC is ready" << std::endl;
+
+    // Run the thing
+    //musician->send("/notify", "1");
+    //std::cout << "Sent notify"<<std::endl;
 
     //
     // Initialize genetics
@@ -153,9 +155,6 @@ int main(int argc, char* argv[]) {
         geneKeys.emplace_back(geneNode.first.as<std::string>());
     }
 
-    std::map<std::string, std::map<std::string, std::string>> attributes =
-        genesNode.as<std::map<std::string, std::map<std::string, std::string>>>();
-
     // The input is from an audience
     // So we want an audience to guide the presentation
     // An audience gives feedback on various criteria
@@ -163,8 +162,8 @@ int main(int argc, char* argv[]) {
     // and the next attempt tries to meet these expectations
 
     // Initialize preferences of audience
+    std::map<std::string, std::map<std::string, std::string>> attributes = genesNode.as<std::map<std::string, std::map<std::string, std::string>>>();
     audience->initializePreferences(attributes);
-
 
     // Initialize the founder generation
     double mutationProbability = config["mutationProb"].as<double>();
@@ -172,31 +171,21 @@ int main(int argc, char* argv[]) {
     audiogene::Population pop(config["populationSize"].as<int>(), seed, mutationProbability, audience);
     logger->info("Initial population: {}", pop);
 
-    // The conductor is the most suitable individual from the current generation
-    // it will them tell the audio player the criteria to use for playing
-
-    // Attach population to output
-    musician->setConductor(pop.fittest());
-
-    // Run the thing
-    uint8_t loops = 16;
     uint8_t topN = config["keepFittest"].as<int>();
+
     uint8_t i = 0;
 
     // Make new generations
-    // TODO(grant) use some sequencing mechanism from SC to signal when to ask for a
     // new generation
     // eg every phrase or something (8 bars? 16/32/64?)
-    while (i < loops && stop == 0) {
-        std::cout << "loop " << +i << std::endl;
+    while (!stop) {
+        std::cout << "loop " << +i++ << std::endl;
         logger->info("Getting new generation from top {} individuals", topN);
         pop.nextGeneration(topN);
         logger->info("New population: {}", pop);
         musician->setConductor(pop.fittest());
-        sleep(8);
-        i++;
+        musician->requestConductor();  // future should return when the thread finishes
     }
 
-    stop = 1;
     return 0;
 }

@@ -51,8 +51,8 @@ Population::Population(const uint8_t n,
 }
 
 void Population::initializePopulation(const Individual& seed) {
-    std::generate(mIndividuals.begin(), mIndividuals.end(), [this, seed] () -> Individual {
-        return Individual(seed);
+    std::generate(mIndividuals.begin(), mIndividuals.end(), [this, &seed] () {
+        return Individual(_genetics.create(seed.instructions()));
     });
 }
 

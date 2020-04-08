@@ -28,6 +28,8 @@
 
 #include <iostream>
 #include <string>
+#include <mutex>
+#include <condition_variable>
 #include <memory>
 
 #include "musician.hpp"
@@ -38,16 +40,20 @@ namespace audiogene {
 
 class OSC: public Musician {
     std::shared_ptr<spdlog::logger> _logger;
-    const lo_address serverAddr;
-    lo::ServerThread st;
+    lo::ServerThread client;
+    lo::Address scLangServer;
+
+    std::mutex _nextMutex;
+    std::condition_variable _nextCV;
 
     bool send(const std::string& path, const std::string& msg);
  public:
     OSC();
-    OSC(const std::string& serverIp, const std::string& serverPort);
+    OSC(const std::string& clientPort, const std::string& serverIp, const std::string& serverPort);
     ~OSC() = default;
 
-    void setConductor(const Individual& conductor) final;
+    virtual void requestConductor();
+    virtual void setConductor(const Individual& conductor) final;
 };
 
 }  // namespace audiogene

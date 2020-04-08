@@ -45,7 +45,7 @@ class Genetics {
     Genetics(const Genetics& rhs);
     Genetics& operator=(const Genetics& rhs);
 
-    Instructions create(const Instructions seed) const noexcept;
+    Instructions create(const Instructions& seed) const noexcept;
     Instructions combine(const std::pair<Instructions, Instructions>& parents) const noexcept;
     Instructions mutate(const Instructions instructions) const noexcept;
 };

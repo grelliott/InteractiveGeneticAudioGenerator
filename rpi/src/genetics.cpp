@@ -55,7 +55,7 @@ class Genetics::Impl {
     explicit Impl(const double mutationProbability);
     ~Impl() = default;
 
-    Instructions create(const Instructions seed) const noexcept;
+    Instructions create(const Instructions& seed) const noexcept;
     Instructions combine(const std::pair<Instructions, Instructions>& parents) const noexcept;
     Instructions mutate(const Instructions instructions) const noexcept;
 };
@@ -73,7 +73,7 @@ Genetics& Genetics::operator=(const Genetics& rhs) {
     return *this;
 }
 
-Instructions Genetics::create(const Instructions seed) const noexcept {
+Instructions Genetics::create(const Instructions& seed) const noexcept {
     return Pimpl()->create(seed);
 }
 
@@ -96,7 +96,7 @@ Genetics::Impl::Impl(const double mutationProbability):
     mRng.seed(std::chrono::system_clock::now().time_since_epoch().count());
 }
 
-Instructions Genetics::Impl::create(const Instructions seed) const noexcept {
+Instructions Genetics::Impl::create(const Instructions& seed) const noexcept {
     Instructions newInstructions;
     for (const std::pair<AttributeName, Instruction>& i : seed) {
         AttributeName name(i.first);
@@ -172,13 +172,15 @@ Instructions Genetics::Impl::combine_randomZipper(const std::pair<Instructions, 
     return childInstructions;
 }
 
-
 Expression Genetics::Impl::mutateExpression(const Expression orig,
                                             std::function<double(const Expression&)>&& distribution) const noexcept {
     Expression mutatedExpression(orig);
     do {
         mutatedExpression.current = distribution(orig);
     } while (mutatedExpression.current < mutatedExpression.min || mutatedExpression.current > mutatedExpression.max);
+    if (mutatedExpression.round) {
+        mutatedExpression.current = std::round(mutatedExpression.current);
+    }
     return mutatedExpression;
 }
 

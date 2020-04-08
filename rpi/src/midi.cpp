@@ -87,34 +87,27 @@ bool MIDI::prepare() {
         midiin->openPort(0);
     }
 
-    // TODO(grant) Use the callback method for this
-    std::thread th([this] () {
-        std::vector<unsigned char> message;
-        size_t messageSize;
-
-        _logger->info("Listening for MIDI messages");
-        while (true) {
-            midiin->getMessage(&message);
-            messageSize = message.size();
-
-            if (messageSize > 0) {
-                // we only care about note-off
-                // TODO(grant) add some sort of buffer/back-off so that rapid bursts of a single event
-                // don't all get handled
-                if (message[0] == 0x80) {
-                    unsigned char key = message[1];
-                    _logger->debug("Note off for {}", key);
-                    if (_mapping.count(key) > 0) {
-                        std::pair<AttributeName, int> attributeChange = _mapping[key];
-                        _logger->info("Attribute {} changed {}", attributeChange.first, attributeChange.second);
-                        preferenceUpdated(attributeChange.first, attributeChange.second);
-                    }
+    MIDI* me = this;
+    midiin->setCallback([] (double timeStamp, std::vector<unsigned char> *message, void *userData) {
+        (void)timeStamp;
+        size_t messageSize = message->size();
+        MIDI* that = static_cast<MIDI*>(userData);
+        that->_logger->debug("Received MIDI message");
+        if (messageSize > 0) {
+            // we only care about note-off
+            // TODO(grant) add some sort of buffer/back-off so that rapid bursts of a single event
+            // don't all get handled
+            if (message->at(0) == 0x80) {
+                unsigned char key = message->at(1);
+                that->_logger->debug("Note off for {}", key);
+                if (that->_mapping.count(key) > 0) {
+                    std::pair<AttributeName, int> attributeChange = that->_mapping[key];
+                    that->_logger->info("Attribute {} changed {}", attributeChange.first, attributeChange.second);
+                    that->preferenceUpdated(attributeChange.first, attributeChange.second);
                 }
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
-    });
-    th.detach();
+    }, me);
 
     _logger->info("MIDI client initialized");
     return true;

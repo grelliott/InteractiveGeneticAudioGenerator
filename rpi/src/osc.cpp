@@ -27,58 +27,75 @@
 #include <lo/lo_cpp.h>
 
 #include <future>
+#include <mutex>
+#include <condition_variable>
 
 namespace audiogene {
 
 OSC::OSC():
-    OSC(nullptr, "57120") {}
+    OSC("57130", "localhost", "57110") {}
 
-OSC::OSC(const std::string& serverIp, const std::string& serverPort):
+OSC::OSC(const std::string& clientPort, const std::string& serverIp, const std::string& serverPort):
         _logger(spdlog::get("log")),
-        serverAddr(lo_address_new(serverIp.c_str(), serverPort.c_str())),
-        st(9000) {
-    if (!st.is_valid()) {
-        _logger->warn("Invalid OSC Server");
-        return;
+        client(clientPort),
+        scLangServer(serverIp, serverPort) {
+    if (!client.is_valid()) {
+        _logger->warn("Invalid OSC Server: client");
+        throw std::runtime_error("Failed to initialize OSC");
     }
 
     std::promise<void> isReadyPromise;
     std::future<void> isReady(isReadyPromise.get_future());
 
-    st.set_callbacks([this, &isReadyPromise] () {
-    _logger->info("OSC Thread started");
-        isReadyPromise.set_value();
-    },
-                    [this] () {
-        _logger->info("OSC Thread finished");
-    });
+    client.set_callbacks([this, &isReadyPromise] () {
+            _logger->info("OSC client started {}", client.url(), client.port());
+            isReadyPromise.set_value();
+        },
+                         [this] () {
+            _logger->info("OSC client finished");
+        });
 
-    st.add_method("done", "s", [this] (lo_arg **argv, int len) {
+    client.add_method("/next", "s", [this] (lo_arg **argv, int len) {
         (void)len;
-        _logger->info("Done: %s", argv[0]->s);
+        _logger->info("Client Next: {}", argv[0]->s);
+        std::unique_lock<std::mutex> l(_nextMutex);
+        _nextCV.notify_all();
     });
 
-    st.start();
-
-    // Notify SuperCollider we're ready
-    lo_send(serverAddr, "/notify", "i", 1);
+    client.start();
 
     // Wait until we've started and the promise is set
     isReady.get();
-    _logger->info("OSC Initialized. {}:{}", serverIp, serverPort);
+
+    // Tell SuperCollider to start playing music
+    lo_send(scLangServer, "/notify", "i", 1);
+
+    _logger->info("OSC Initialized");
+}
+
+void OSC::requestConductor() {
+    std::unique_lock<std::mutex> l(_nextMutex);
+    if (_nextCV.wait_for(l, std::chrono::seconds(8)) != std::cv_status::timeout) {
+        _logger->info("Didn't time out waiting for signal!");
+    } else {
+        _logger->info("Timed out waiting for signal!");
+    }
 }
 
 void OSC::setConductor(const Individual& conductor) {
     _logger->info("Setting new conductor {}", conductor);
-    // TODO(grant) just handle intructions here
-    // for (Instructions::const_iterator it = instructions.cbegin(); it != instructions.cend(); ++it) {
-    //     lo_send(serverAddr, std::string("/gene/"+it->name()).c_str(), "f", it->expression().current);
-    // }
-//    receiveInstructions(conductor.instructions());
+    Instructions instructions = conductor.instructions();
+    for (const auto& kv : instructions) {
+        AttributeName attributeName = kv.first;
+        Instruction instruction = kv.second;
+        // TODO(grant) Determine the type of data being sent
+        lo_send(scLangServer, std::string("/gene/"+attributeName).c_str(), "f", instruction.expression().current);
+    }
+    _logger->info("New conductor set", conductor);
 }
 
 bool OSC::send(const std::string& path, const std::string& msg) {
-    lo_send(serverAddr, path.c_str(), "s", msg.c_str());
+    lo_send(scLangServer, path.c_str(), "s", msg.c_str());
     return true;
 }
 
