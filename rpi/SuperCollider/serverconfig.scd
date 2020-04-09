@@ -5,6 +5,7 @@ s.quit;
 o = ServerOptions.new;
 
 // RaspberryPi
+o.device = "maudiogene";
 o.numOutputBusChannels = 2;
 o.numInputBusChannels = 0;
 o.sampleRate = 48000;
@@ -54,18 +55,20 @@ ServerQuit.removeAll;
     ~bus = Dictionary.new;
     ~bus.add(\out -> Bus.audio(s, 2));
     ~out = ~bus[\out];
+    //TODO patch \out into masterFxBus
     ~bus.add(\reverbBus -> Bus.audio(s, 2));
     ~bus.add(\delayBus -> Bus.audio(s, 2));
     ~bus.add(\masterFxBus -> Bus.audio(s, 2));
+    //TODO patch masterFxBus to masterout
 };
 
 // Set up a few key groups
 ~makeNodes = {
     s.bind({
-        ~mainGrp = Group.head;
+        ~mainGroup = Group.head;
         // dd groups for each instrument group
         ~fxGroup = Group.after(~mainGrp);
-        ~masterFxFinalGrp = Group.tail;
+        ~masterFxGroup = Group.tail;
     });
 };
 
@@ -107,7 +110,8 @@ ServerQuit.removeAll;
         if (msg[1] == 1) {
             "Starting music".postln;
             //e[\event1].value;
-            ~reverbGrp.set(\gate, 1);
+            ~masterFxGroup.set(\gate, 1);
+            ~fxGroup.set(\gate, 1);
             ~mainGroup.set(\gate, 1);
             addr.sendMsg("/done", "awake");
         }
@@ -134,11 +138,11 @@ ServerQuit.removeAll;
 
     e.add(\event1 -> {
         Pbind(
-            \instrument, \metronome,
+            \instrument, \kick,
             \rel, 0.1,
             \dur, 1/2,
             \stretch, TempoClock.tempo,
-            \gate, 1,
+            \gate, 0,
             \group, ~mainGrp,
             \out, ~out,
         ).play(quant: 15) ;
@@ -232,7 +236,7 @@ ServerQuit.add(~cleanup);
 ServerBoot.add(~makeBusses);
 ServerBoot.add(~makeNodes);
 //ServerBoot.add(~loadBuffers);
-//ServerBoot.add(~loadSynths);
+ServerBoot.add(~loadSynths);
 //ServerBoot.add(~makeSynths);
 //ServerBoot.add(~loadFx);
 //ServerBoot.add(~makeFx);
@@ -256,7 +260,12 @@ s.waitForBoot({
         sig = SoundIn.ar(in);
         Out.ar(out, sig*amp);
     }).add;
-    */
+*/
+    ~kickSynth = Synth.new(\ambientpad, [
+        \amp, 1.0,
+        \out, ~masterOut
+    ], ~mainGroup);
+
 /*
     ~reverbSynth = Synth.new(\reverb, [
         \amp, 1,
