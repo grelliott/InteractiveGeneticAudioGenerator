@@ -2,6 +2,6 @@ _build/
 _install/
 notes
 *.log
-SuperCollider/fx/
+dSuperCollider/fx/
 SuperCollider/synths/
 
