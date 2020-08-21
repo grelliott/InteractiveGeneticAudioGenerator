@@ -15,7 +15,7 @@ SynthDef(\reverb, {
     temp = DelayN.ar(temp, 0.2, predelay);
     temp = AllpassN.ar(temp, 0.05, {Rand(0.001, 0.05)}!2, revtime);
     temp = LPF.ar(temp, lpfFreq);
-    2.do({
+    8.do({
         arg item;
         temp = AllpassN.ar(temp, 0.05, {Rand(0.001, 0.05)}!2, revtime);
         temp = LPF.ar(temp, lpfFreq);

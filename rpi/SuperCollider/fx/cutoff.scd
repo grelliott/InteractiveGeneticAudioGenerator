@@ -1,14 +1,11 @@
 // cutoff
 SynthDef(\cutoff, {
-    arg in, out,
+    arg out,
 	lpCutoff = 18000,  // low-pass hard cuttof
-	lpGain = 0.0,
-	hpCutoff = 60,  // high-pass hard cutoff
-	hpGain = 0.0;
+	hpCutoff = 60;  // high-pass hard cutoff
 
-	var sig = In.ar(in, 2);
-	sig = LPF.ar(sig, lpCutoff, lpGain.dbamp);
-	sig = HPF(sig, hpCutoff, hpGain.dbamp);
-
-    Out.ar(out, In.ar(in, 2));
+	var sig = In.ar(out, 2);
+	sig = BLowPass.ar(sig, lpCutoff);
+	sig = BHiPass.ar(sig, hpCutoff);
+    ReplaceOut.ar(out, sig);
 }).add;

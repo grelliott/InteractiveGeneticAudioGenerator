@@ -1,152 +1,248 @@
+~setEnergy.value(127);
+~setTempo.value(120);
+~setScale.value(3);
+{ Out.ar(~masterout, [BrownNoise.ar(), BrownNoise.ar()]) }.play
+~bus[\lpCutoffBus].set(18000);
+~bus[\hpCutoffBus].set(70);
+~setGain.value(0);
+~setLimiter.value(0.95, 0.02);
+
 (
+"".postln;
+"Restarting server".postln;
 s.quit;
+
+
+~basePath = "Y:\audiogene/rpi/SuperCollider/";
+~oscPort = 51730;
 
 // 1. Server config
 o = ServerOptions.new;
-
-// RaspberryPi
-/*
-o.device = "audiogene";
+//
+// // RaspberryPi 4
 o.numOutputBusChannels = 2;
 o.numInputBusChannels = 0;
 o.sampleRate = 48000;
-//o.hardwareBufferSize = 16; //2.pow(12);  // TODO determine correct size for this
+// // //o.hardwareBufferSize = 16; //2.pow(12);  // TODO determine correct size for this
 o.blockSize = 64;
-o.memSize = 2.pow(18);  // Or 2.pow(20)
+o.memSize = 2.pow(20);  // Or 2.pow(20)
 o.maxLogins = 2;
-~basePath = "/home/pi/src/audiogene/rpi/SuperCollider/";
-*/
-
-///*
-// Laptop
-/*
-o.device = "ASIO";
-o.numOutputBusChannels = 12;
-o.numInputBusChannels = 6;
-o.sampleRate = 48000;
-o.hardwareBufferSize = 32;
-o.blockSize = 32;
-*/
-// /*
-o.outDevice = "CABLE Input";
-// */
-o.memSize = 2.pow(16);  // Or 2.pow(20)
-o.maxLogins = 2;
-~basePath = "Z:/src/audiogene/rpi/SuperCollider/";
-//*/
-
+//
 s = Server.local;
 s.options = o;
-
-ServerBoot.removeAll;
-ServerTree.removeAll;
-ServerQuit.removeAll;
-
-
-~oscPort = 51730;
 
 /*
  * TODO look at setting up an OSC connection with an app/webpage
  * expose the environment controls.
  * probably use python for most of it, or javascript...?
  * looks like javascript on nodejs would work
- *
- * Set up parameters for volume, EQ, limiter
+  */
+
+
+ /*
+  * Set up parameters for volume, EQ, limiter
+  */
+~gain = 0.0;  // in dB
+~lpCutoff = 8000;
+~hpCutoff = 60;
+~limiterAmp = 0.8;
+~limiterDur = 0.02;
+~tempo = 120;
+~tempoMin = 60;
+~tempoMax = 180;
+
+
+// Set up scales from 0 - 12
+// 0 being most moody, 12 being most joyous
+// Then to set scale, just pick the scale from the array at the index
+    // A dark moody vibe may use a range of scales such as Aeolian, harmonic minor, melodic minor, locrian
+    // upbeat may use scales such as major, mixolydian, lydian, phrygian, harmonic major, dorian (may be on border)
+~scales = [
+    Scale.locrian,
+    Scale.melodicMinor,
+    Scale.harmonicMinor,
+    Scale.aeolian,
+    Scale.dorian,
+    Scale.harmonicMajor,
+    Scale.phrygian,
+    Scale.lydian,
+    Scale.mixolydian,
+    Scale.major
+];
+~scale = Scale.major;
+
+
+
+/*
+ * Helper functions
  */
-~gain = 0.0;
-~lpCutoff = 22000;
-~lpGain = -45.0;
-~hpCutoff = 35;
-~hpGain = -45.0;
-
-
-~masterout = Bus.new(\audio, 0, 2, s);
-// ~micin = Bus.new(\audio, 0, 1, s); // Mic In channel
-
-~t = TempoClock.default;
-
-
 ~loadFiles = { |base, files|
     files.do({ |file, i|
         (base++file).load;
     });
 };
 
-
+/*
+ * Server setup routines
+ */
 ~makeBusses = {
     s.newBusAllocators;
+
+
     ~bus = Dictionary.new;
+
+    // Set up audio busses
+
+    // This is the audio bus to the output device
+    ~masterout = Bus.new(\audio, 0, 2, s);
+
+    // This is where to send any signals destined for
+    // output. There will be master FX chained between it and masterout
     ~bus.add(\out -> Bus.audio(s, 2));
     ~out = ~bus[\out];
 
-	~bus.add(\limiterBus -> Bus.audio(s, 2));
-	~bus.add(\cutoffBus -> Bus.audio(s, 2));
-    ~bus.add(\masterFxBus -> Bus.audio(s, 2));
 
-	// Add control busses that can carry signals to any synth that needs
-	// to know the value for a parameter
+    // Set up control busses
 
-	// rythymBus carries a signal that indicates
-	// how much rythym should be in the piece (none to 4/4 to broken...?)
-	~bus.add(\rhythmBus -> Bus.control(s));
-	// vibeBus (name tbd) could toggle things like
-	// scale, or sample selection
-	~bus.add(\vibeBus -> Bus.control(s));
+    ~bus.add(\gainBus -> Bus.control(s));
+    ~gainBus = ~bus[\gainBus];
+    ~gainBus.set(~gain.dbamp);
+
+	~bus.add(\lpCutoffBus -> Bus.control(s));
+	~bus.add(\hpCutoffBus -> Bus.control(s));
+	~bus.add(\limiterAmpBus -> Bus.control(s));
+	~bus.add(\limiterDurBus -> Bus.control(s));
+
+    // rythymBus carries a signal that indicates
+    // how much rythym should be in the piece (none to 4/4 to random...?)
+    ~bus.add(\rhythmBus -> Bus.control(s));
+
+    // Energy bus may control the kind of energy the piece has
+    // Perhaps going from a calm relaxed energy
+    // to an upbeat energetic feeling
+    // May not need tempo OSC for this
+    // Lower energy may be low tempo, maybe less instruments, more open arrangments, less structured rythm
+    // higher energy may be higher tempo, more instruments, more structured rythm
+
+   ~bus.add(\energyBus -> Bus.control(s));
+
+    // vibeBus (name tbd) could toggle things like
+    // scale, or sample selection
+    // Perhaps moving from a dark moody vibe to a upbeat happy vibe
+    // A dark moody vibe may use a range of scales such as Aeolian, harmonic minor, melodic minor, locrian
+    // upbeat may use scales such as major, mixolydian, lydian, phrygian, harmonic major, dorian (may be on border)
+    // Dark may use drawn out simple chords
+    // upbeat may use snappier chords, maybe a bit more complex or at least arranged to feel happy
+
+    ~bus.add(\vibeBus -> Bus.control(s));
+
+    // Theme bus may change from a natural organic theme to a digital techy theme
+    // organic theme may contain field-recordings played out very close to reality
+    //   perhaps nature-based instruments (sticks, wooden pipes, etc)
+    // digital theme may contain synths, perhaps with heavy effects
+
+    ~bus.add(\themeBus -> Bus.control(s));
 };
-
 
 // Set up a few key groups
 ~makeNodes = {
-	~mainGroup = Group.head;
-	~padsGroup = Group.new(~mainGroup, \addToHead);
-	// add groups for each instrument group
-	~fxGroup = Group.after(~mainGroup);
-	~masterFxGroup = Group.tail;
+    ~mainGroup = Group.head;
+    ~padsGroup = Group.new(~mainGroup, \addToHead);
+    // add groups for each instrument group
+    ~fxGroup = Group.after(~mainGroup);
+    ~masterFxGroup = Group.tail;
 };
 
 
 ~addRoutines = {
-	~bpm = 120;
+    ~t = TempoClock.default;
     ~setTempo = { |bpm|
+        ~tempo = bpm;
         // Schedule tempo change to next bar
         ~t.schedAbs(~t.nextBar, {
             "Setting BPM to ".post;
-            bpm.postln;
-			~t.tempo = bpm / 60;
+            ~tempo.postln;
+            ~t.tempo = ~tempo / 60.0;
         });
-    };
-
-    ~adjustTempo = { |dir|
-        ~setBpm.value(~bpm + (5 * dir.sign));
     };
 
     ~setScale = { |scale|
         "Setting scale to ".post;
-        scale.postln;
+        ~scales.clipAt(scale).name.postln;
+        ~scale = ~scales.clipAt(scale);
     };
 
-	~setVibe = { |vibe|
-		~bus[\vibeBus].set(vibe);
+    ~setGain = { |db|
+        if( db > 6, {
+            db.post;
+            "db is greater than the max 6db".postln;
+            nil;
+        },
+        {
+            "Setting gain to ".post;
+            db.post;
+            "db".postln;
+            ~gain = db;
+            ~gainBus.set(~gain.dbamp);
+        });
+    };
+
+	~setCutoff = { |hpCutoff, lpCutoff|
+		~hpCutoff = hpCutoff;
+		~lpCutoff = lpCutoff;
+		~bus[\hpCutoffBus].set(~hpCutoff);
+		~bus[\lpCutoffBus].set(~lpCutoff);
 	};
+
+	~setLimiter = { |amp, dur|
+		~limiterAmp = amp;
+		~limiterDur = dur;
+		~bus[\limiterAmpBus].set(~limiterAmp);
+		~bus[\limiterDurBus].set(~limiterDur);
+	};
+
+    ~setEnergy = { |energy|
+        "Setting energy to ".post;
+        energy.postln;
+        // set the tempo based on the value of energy
+        // Assume it falls between 0-255
+        // and tempo falls between tempoMin and tempoMax
+        ~setTempo.value(energy.linlin(0, 255, ~tempoMin, ~tempoMax));
+        ~bus[\energyBus].set(energy);
+    };
+
+    ~setVibe = { |vibe|
+        "Setting vibe to ".post;
+        vibe.postln;
+        ~bus[\vibeBus].set(vibe);
+    };
+
+    ~setTheme = { |theme|
+        "Setting theme to ".post;
+        theme.postln;
+        ~bus[\themeBus].set(theme);
+    };
 };
 
 
 ~setupOSC = {
     ~osc = NetAddr("localhost", ~oscPort);
-    /*OSCdef.new(\notifyOSC, {
+/*
+    OSCdef.new(\notifyOSC, {
         arg msg, time, addr, port;
         [msg, addr].postln;
         if (msg[1] == 1) {
             "Starting music".postln;
             //e[\event1].value;
-			~masterFxGroup.set(\gate, 1);
-			~fxGroup.set(\gate, 1);
-			~mainGroup.set(\gate, 1);
+            ~masterFxGroup.set(\gate, 1);
+            ~fxGroup.set(\gate, 1);
+            ~mainGroup.set(\gate, 1);
             addr.sendMsg("/done", "awake");
         }
     },
     '\notify'
-    );*/
+    );
+*/
 
     OSCdef.new(\tempo, { |msg, time, addr, port|
         ~setTempo.value(msg[1]);
@@ -160,163 +256,165 @@ ServerQuit.removeAll;
     '/gene/scale'
     );
 
-	OSCdef.new(\vibeOSC, { |msg, time, addr, port|
+    OSCdef.new(\energyOSC, { |msg, time, addr, port|
+        ~setEnergy.value(msg[1]);
+    },
+    '/gene/energy'
+    );
+
+    OSCdef.new(\vibeOSC, { |msg, time, addr, port|
         ~setVibe.value(msg[1]);
     },
     '/gene/vibe'
     );
+
+    OSCdef.new(\themeOSC, { |msg, time, addr, port|
+        ~setTheme.value(msg[1]);
+    },
+    '/gene/theme'
+    );
 };
 
 
+// Set up MIDI input
+~setupMIDI = {
+    // Initialize client
+    MIDIClient.init;
+    //MIDIClient.init(1, 0);
+    MIDIIn.connectAll;
+
+    ~midiDebug = MIDIFunc.noteOn({ |veloc, num, chan, src|
+        "MIDI On: ".post;
+        num.postln;
+    });
+    ~prepareMIDI = { |synthdef|
+        var notes;
+        notes = Array.newClear(128);
+
+        ~midiOn = MIDIFunc.noteOn({ |veloc, num, chan, src|
+                notes[num] = Synth(synthdef.asSymbol, [\out, ~masterout, \freq, num.midicps, \amp, veloc * 0.00315]);
+        });
+        ~midiOff = MIDIFunc.noteOff({ |veloc, num, chan, src|
+            notes[num].release;
+        });
+    };
+    ServerQuit.add({ ~midiDebug.free; ~midiOn.free; ~midiOff.free; MIDIIn.disconnectAll; });
+};
+
 /*
  * Load up all the samples in the buffers path
- * TODO see about organizing them by style?
- * TODO have a keyed lookup to get the buffer number?
- * eg getBuffer("pads/foo")
- * or getBuffer("field/recording1")
  */
 ~loadBuffers = {
-    var bufferPath;
-    bufferPath = ~basePath++"buffers/";
-    ~b = Dictionary.new;
-    PathName(bufferPath).entries.do { | subfolder |
-		subfolder.folderName.postln;
-        ~b.add(
-            subfolder.folderName.asSymbol ->
-            Array.fill(subfolder.entries.size, { | i |
-				subfolder.entries[i].fullPath.postln;
-				Buffer.read(s, subfolder.entries[i].fullPath);
-				//bufnum;
-			})
-        );
+    {
+        var bufferPath = ~basePath++"buffers/";
+        ~b = Dictionary.new;
+        PathName(bufferPath).entries.do { | subfolder |
+            ~b.put(subfolder.folderName.asSymbol, Dictionary.new);
+            subfolder.folderName.postln;
+            subfolder.entries.do { |file|
+               ~b[subfolder.folderName.asSymbol].put(file.fileNameWithoutExtension.asSymbol, Buffer.read(s, file));
+            };
+        };
+    };
+    ~getBuffer = { |folder, file|
+        ~b.at(folder.asSymbol).at(file.asSymbol);
     };
 };
 
 
 ~loadSynths = {
     ~loadFiles.value(~basePath++"synths/", [
-		"kick.scd",
-		"synthbass.scd",
-		"ambientpad.scd",
-		"voice.scd",
-	]);
+        "kick.scd",
+		"apad_mh.scd",
+        "synthbass.scd",
+        "ambientpad.scd",
+        "voice.scd",
+    ]);
 };
 
 
 ~makeSynths = {
-	//TODO add routing for MIDI to test synths
-	// send keys as note inputs for the synth
+    //TODO add routing for MIDI to test synths
+    // send keys as note inputs for the synth
 
     SynthDef(\sine_a, {
-		arg out=~out,
-		freq=440,
-		amp=1,
-		atk=0.01, dec=1, sus=0.1, rel=0.1,
-		gate=1;
-		var sig, env;
-		sig = SinOsc.ar(freq, 0);
-		env = EnvGen.kr(Env.adsr(atk, rel), gate, doneAction:2);
-		sig = sig * env * amp;
-		Out.ar(out, sig);
-	}).add;
+        arg out=~out,
+        freq=440,
+        amp=1,
+        atk=0.01, dec=1, sus=0.1, rel=0.1,
+        gate=1;
+        var sig, env;
+        sig = SinOsc.ar(freq, 0);
+        env = EnvGen.kr(Env.adsr(atk, rel), gate, doneAction:2);
+        sig = sig * env * amp;
+        Out.ar(out, sig);
+    }).add;
 
-	/*SynthDef(\metronome, {
-		arg out=~out,
-		freq=440,
-		amp=1,
-		atk=0.01, rel=0.1,
-		gate=1;
+    // play 1-channel sample
+    SynthDef(\playSample1, {
+        arg out,
+        sample,
+        loop = 0;
 
-		var sig, env;
-		sig = SinOsc.ar(freq, 0);
-		env = EnvGen.kr(Env.perc(atk, rel), gate: gate, doneAction:2);
-		sig = sig * env * amp;
-		Out.ar(out, sig);
-	}).add;*/
+        Out.ar(out, PlayBuf.ar(1, sample, loop: loop, doneAction: Done.freeSelf));
+    }).add;
 
-	// play 1-channel sample
-	SynthDef(\playSample1, {
-		arg out,
-		sample,
-		loop = 0;
+    // play 2-channel samples
+    SynthDef(\playSample2, {
+        arg out,
+        sample,
+        loop = 0;
 
-		Out.ar(out, PlayBuf.ar(1, sample, loop: loop, doneAction: Done.freeSelf));
-	}).add;
+        Out.ar(out, PlayBuf.ar(2, sample, loop: loop, doneAction: Done.freeSelf));
+    }).add;
 
-	// play 2-channel samples
-	SynthDef(\playSample2, {
-		arg out,
-		sample,
-		loop = 0;
-
-		Out.ar(out, PlayBuf.ar(2, sample, loop: loop, doneAction: Done.freeSelf));
-	}).add;
-
-	// set up some ambient pads (squeeks, groans, whooshes)
+    // set up some ambient pads (squeeks, groans, whooshes)
 
 /*
-	SynthDef(\squeekyPad, {
-		arg out,
-		freq=440,
-		gate=1,
-		chatter=0.5, // 0 = no chatter, 1.0 = lots of chatter (how much chatter from the squeeky parts slipping)
-		squeek=0.0,
-		amp = 1.0;
+    SynthDef(\squeekyPad, {
+        arg out,
+        freq=440,
+        gate=1,
+        chatter=0.5, // 0 = no chatter, 1.0 = lots of chatter (how much chatter from the squeeky parts slipping)
+        squeek=0.0,
+        amp = 1.0;
 
-		var sig, env,
-		atk = 2, sus = 1, rel = 2,
-		atkRate = 1.1, susRate = 1.5, relRate = 1.1;
-		// Stretch should increase the atk, sust, rel
-		// if it's 0 then the whole thing shoudld start fairly slow, almost no sustain, fairly slow release
-		// if it's -1 then it should start almost immediately
-		// if it's 1 then
-		// atk/rel could grow the same rate, sustains growth should be greater
-		// atk = atk * (atkRate**squeek);
-		// sus = sus * (susRate**squeek);
-		// rel = rel * (relRate**squeek);
+        var sig, env,
+        atk = 2, sus = 1, rel = 2,
+        atkRate = 1.1, susRate = 1.5, relRate = 1.1;
+        // Stretch should increase the atk, sust, rel
+        // if it's 0 then the whole thing shoudld start fairly slow, almost no sustain, fairly slow release
+        // if it's -1 then it should start almost immediately
+        // if it's 1 then
+        // atk/rel could grow the same rate, sustains growth should be greater
+        // atk = atk * (atkRate**squeek);
+        // sus = sus * (susRate**squeek);
+        // rel = rel * (relRate**squeek);
 
-		sig = SawDPW.ar(freq, 0); //mayyybe modulate the iphase?
-		env = EnvGen.ar(Env.asr(atk, sus, rel), gate: gate, doneAction: Done.freeSelf);
+        sig = SawDPW.ar(freq, 0); //mayyybe modulate the iphase?
+        env = EnvGen.ar(Env.asr(atk, sus, rel), gate: gate, doneAction: Done.freeSelf);
 
-		Out.ar(out, sig * env * amp);
-	}).add;
-
-	Pbindef(\mypad,
-		\instrument, \squeekyPad,
-		\out, ~masterout,
-
-		\amp, 1,
-		\degree, Pseq([0, 1, 2, 3, 4, 5, 6, 7], 1),
-		\scale, Pfunc({Scale.major}, inf),
-		\dur, 0.25,
-		\squeek, 0.1,
-		// \chatter, 0.5,
-		\group, ~mainGroup
-	);
-	Pbindef(\mypad).play
-	Pbindef(\mypad, \db, -40)
-	Pbindef(\mypad, \scale, Scale.minor);
-	Pbindef(\mypad).stop
-	Pbindef(\mypad, \gate, 1)
-	~mainGroup.set(\db, 1.0)
-	~mainGroup.freeAll
+        Out.ar(out, sig * env * amp);
+    }).add;
 */
 
-	/*SynthDef(\groan, {
-		arg out,
-		gate=0,
-		amp=1.0,
+/*
+    SynthDef(\groan, {
+        arg out,
+        gate=0,
+        amp=1.0,
 
-	});*/
+    });
+*/
 
-	// readme https://theseanco.github.io/howto_co34pt_liveCode/2-1-Recommended-Addons/
+    // readme https://theseanco.github.io/howto_co34pt_liveCode/2-1-Recommended-Addons/
 
-	// add some clicking sounds (wooden, insecty, metallic)
-	// use samples for these
+    // add some clicking sounds (wooden, insecty, metallic)
+    // use samples for these
 
-	// add some voices (with echo and delay)
-	// maybe like those voices from Annihilation
-	// or choral-sounding (uplifting)
+    // add some voices (with echo and delay)
+    // maybe like those voices from Annihilation
+    // or choral-sounding (uplifting)
 };
 
 
@@ -333,23 +431,23 @@ ServerQuit.removeAll;
  *
  */
 ~loadFx = {
-	~loadFiles.value(~basePath++"fx/", [
-		//"reverb.scd",
-		"schroederReverb.scd",
-		"delay.scd",
-		"limiter.scd",
-		"cutoff.scd",
+    ~loadFiles.value(~basePath++"fx/", [
+        "reverb.scd",
+        "schroederReverb.scd",
+        "delay.scd",
 		"paulstretch.scd",
-		"volume.scd",
-	]);
+        "cutoff.scd",
+        "limiter.scd",
+        "volume.scd",
+    ]);
 };
 
 
 ~makeFx = {
-	// bitcrush
-	// StageLimiter quark (BatLib)
+    // bitcrush
+    // StageLimiter quark (BatLib)
 
-	// Tape stretch
+    // Tape stretch
 
     // Compressor
 
@@ -359,15 +457,16 @@ ServerQuit.removeAll;
 
 // Create some sequences to work with
 ~makeSequences = {
-
+    // Maybe break up sequences into timing and notes
+    // need to test out instruments with different sequences to create them
 };
 
 
 ~cleanup = {
-	s.newBusAllocators;
-	ServerBoot.removeAll;
-	ServerTree.removeAll;
-	ServerQuit.removeAll;
+    s.newBusAllocators;
+    ServerBoot.removeAll;
+    ServerTree.removeAll;
+    ServerQuit.removeAll;
 };
 
 
@@ -376,6 +475,7 @@ ServerTree.add(~makeNodes);
 ServerTree.add(~makeBusses);
 ServerTree.add(~addRoutines);
 ServerTree.add(~setupOSC);
+// ServerTree.add(~setupMIDI);
 
 ServerBoot.add(~loadBuffers);
 ServerBoot.add(~loadSynths);
@@ -390,326 +490,131 @@ ServerQuit.add(~cleanup);
 
 //5. Boot server
 s.waitForBoot({
-	"Server booted".postln;
-
-    // wait for previous server actions to complete
     s.sync;
-
-	// Take a look at NDef for perhaps swapping synths in and out
-
-/*
-    // Mic In
-    SynthDef(\micin, {
-        arg in=~micin, out=~out, amp=0.5;
-        var sig;
-        sig = SoundIn.ar(in);
-        Out.ar(out, sig*amp);
-    }).add;
-*/
-
-	/*
-	 * Utilities
-	 */
-	// Metronome / Click
-	// Sine
+    "Server booted".postln;
 
 
-	/*
-	 * Maybe layer up different samples? Skip the synths for now?
-	 * Maybe key samples and play as notes?
-	 */
+    /*
+     * Maybe layer up different samples? Skip the synths for now?
+     * Maybe key samples and play as notes?
+     */
 
-	/*
-	 * Instruments
-	 */
-
-	// add some sample playback (through tape stretch, saturation, delay)
-	// TODO change to Pbindef
-	 /*({
-	 	var envBuf, envSignal, buffer;
-	 	buffer = Buffer.read(s, Platform.resourceDir +/+ "sounds/a11wlk01.wav");
-	 	// The grain envelope
-	 	envBuf = Buffer.alloc(s, s.sampleRate, 1);
-	 	envSignal = Signal.newClear(s.sampleRate).waveFill({|x| (1 - x.pow(2)).pow(1.25)}, -1.0, 1.0);
-	 	envBuf.loadCollection(envSignal);
-	 	s.sync();
-	 	// Runs indefinitely
-	 	Synth(\paulstretchMono, [\bufnum, buffer.bufnum, \envBufnum, envBuf.bufnum]);
-	 	}.fork;
-	 );*/
-
-	//~mainGroup.set(\gate, 1);
-
-	// mix
-	// http://www.dewdrop-world.net/sc3/tutorials/index.php?id=1
-	// Add levels mixer
-	// maybe use some modulation to automate the amplitude
-	// should it be set up before?
-	// mixer.addChannel(\name, [\out, \dest], \channels, 2)
-	// should add a new
-	// mixer(\name).set(\amp, -4db) // should take something that can modulate
-	// mixer(\name).set(\out, \newdest)
+    // add some sample playback (through tape stretch, saturation, delay)
 
 
-	/*
-	* FX
-	*/
-/*
-	~reverbSynth = Synth.new(\reverb, [
-		\amp, 1,
-		\predelay, 0.1,
-		\revtime, 1.8,
-		\lpf, 4500,
-		\mix, 0.35,
-		\in, ~bus[\reverbBus],
-	   \out, ~out
-	], ~fxGroup);
-*/
-/*
-	~delaySynth = Synth(\delay, [
-		\maxdelaytime, 0.8,
-		\delaytime, 0.2,
-		\decaytime, 1.4,
-		\atk, 0.01,
-		\sustain, 1.0,
-		\rel, 0.01,
-		\in, ~bus[\delayBus],
-		\out, ~out
-	], ~fxGroup);
-*/
+    /*
+    * FX
+    */
+    // TODO maybe I can create a single reverb and run sends from synths to it and back?
 
-	/*
-	* Master FX
-	*/
-	// Cutoff EQ
-	~cutoffEq = Synth(\cutoff, [
-		\lpCutoff, ~lpCutoff,
-		\lpGain, ~lpGain,
-		\hpCutoff, ~hpCutoff,
-		\hpGain, ~hpGain,
-		\in, ~out,
-		\out, ~bus[\limiterBus]
-	], ~masterFxGroup);
 
-	// EQ
+    /*
+    * Master FX
+    */
+    // Hard cutoff EQ for low/hi ends
+    ~cutoffEq = Synth.head(~masterFxGroup, \cutoff, [
+		\lpCutoff, ~bus[\lpCutoffBus].asMap,
+		\hpCutoff, ~bus[\hpCutoffBus].asMap,
+        \out, ~masterout
+    ]);
 
-	//TODO verify limiter works as expected
-	// It should prevent any clipping, but should not
-	// distort any sounds under the limit
-	// Limiter
-	//~gainBus = Bus.audio(s, 2);
-	~limiter = Synth.after(~cutoffEq, \limiter, [
-		\amp, 0.0,
-		\dur, 0.02,
-		\in, ~bus[\limiterBus],
+    // EQ
+
+    // Limiter to protect against any clipping
+    ~limiter = Synth.after(~cutoffEq, \limiter, [
+		\amp, ~bus[\limiterAmpBus].asMap,
+		\dur, ~bus[\limiterDurBus].asMap,
+        \out, ~masterout
+    ]);
+
+    // Final Master gain
+    ~gainSynth = Synth.after(~limiter, \volumeCtl, [
+		\amp, ~bus[\gainBus].asMap,
 		\out, ~masterout
-	]);
-
-	//TODO need volume
-	~gainSynth = Synth.after(~limiter, \volumeCtl, [
-		\amp, ~gain.dbamp,
-		\out, ~masterout
-	]);
-	// s.sync;
-	//~osc.sendMsg('/done', "awake");
-
-	// send event to start playing
-	"done".postln;
+    ]);
 });
-)  // Done server load
 
+s.doWhenBooted({
+	~setTempo.value(~tempo);
 
-~cutoffEq.set(\hpCutoff, 500);
-
-// Look at Pgroup for getting a collection of Pbind objects to play...?
-// Also look at Pfx/Pfxb!! And Pbus
-// check out https://depts.washington.edu/dxscdoc/Help/Tutorials/A-Practical-Guide/PG_06f_Server_Control.html
-(
-var syn, fxr;
-syn = Pbindef(\voices,
-	\instrument, \voice,
-	\midinote, Prand(#[24,28,29,48], inf),
-	\pan, Pprob([-0.5, 0.5]),
-	\atk, Pprob([4,14]),
-	\rel, Pprob([5,25]),
-	\amp, 1.0,
-	\group, ~padsGroup
-);
-~g = Pfxb(syn, \schroederReverb,
-	\predelay, 0.1,
-	// \revtime, 1.8,
-	// \lpf, 4500,
-	\mix, 0.15,
-	\group, ~fxGroup
-).play;
-// ~g = Ppar([fxr, syn]).play;
-// Pbindef(\voices).play(~t);
-)
-~g.new(\midinote, Pseq(#[18, 21, 22, 25, 27], inf));
-~g.stop
-Pbindef(\voices).stop
-
-(
-var reverb, reverbBus, envBuf, envSignal, synth;
-
-reverbBus = Bus.audio(s, 2);
-reverb = Synth.new(\schroederReverb, [
-	// \amp, 1,
-	\predelay, 0.1,
-	// \revtime, 1.8,
-	// \lpf, 4500,
-	\mix, 0.35,
-	\in, reverbBus,
-	\out, ~out
-], ~fxGroup);
-
-envBuf = Buffer.alloc(s, s.sampleRate, 1);
-envSignal = Signal.newClear(s.sampleRate).waveFill({|x| (1 - x.pow(2)).pow(1.25)}, -1.0, 1.0);
-envBuf.loadCollection(envSignal);
-~synth = Synth.new(\paulstretchMono, [
-	\out, reverbBus,
-	\bufnum, ~b[\sounds][0],
-	\envBufnum, envBuf,
-	\stretch, 100
-], ~padsGroup);
-
-//synth.run(false);
-)
-~synth.set(\stretch, 1);
-~synth.run(false);
-
-
-(
-Pbindef(\rainSample,
-	\instrument, \playSample2,
-	\out, ~bus[\delayBus],
-	\sample, ~b[\sounds][0],
-	\amp, 0.8,
-	\group, ~mainGroup
-);
-
-)
-Pbindef(\rainSample, \amp, 0.4).stop
-
-~delaySynth.set(\decaytime, 0.5)
-~mainGroup.freeAll
-
-~padsGroup.freeAll
-~fxGroup.freeAll
-
-
-/*
-
-// Example
-(
-{
-    var envBuf, envSignal, buffer;
-    buffer = Buffer.read(s, Platform.resourceDir +/+ "sounds/a11wlk01.wav");
-    // The grain envelope
-    envBuf = Buffer.alloc(s, s.sampleRate, 1);
-    envSignal = Signal.newClear(s.sampleRate).waveFill({|x| (1 - x.pow(2)).pow(1.25)}, -1.0, 1.0);
-    envBuf.loadCollection(envSignal);
-    s.sync();
-    // Runs indefinitely
-    Synth(\paulstretchMono, [\bufnum, buffer.bufnum, \envBufnum, envBuf.bufnum]);
-}.fork;
+	~setGain.value(~gain);
+	~setCutoff.value(~hpCutoff, ~lpCutoff);
+	~setLimiter.value(~limiterAmp, ~limiterDur);
+	~osc.sendMsg('/done', "awake");
+	"done".postln;
+	//~mainGroup.set(\gate, 1);
+});
 )
 
-~setTempo.value(70);
-Pbindef(\mykick).stop;
 
-// (
-/* Voices
+// Done server load
+//~prepareMIDI.value("apad_mh");
 
-http://www.kimri.org/blog/?p=64
+// Need to set up some way of taking in the control busses
+// to adjust the parameters of the synth
+//
+// Some control bus/value combinations might select a different instrument
+// some might select different note sequences
+// Some might select different adsr values for the main envelope
+// should maybe use notes for sequence instead of midinotes, so the scale works better?
+// Look into synthdef variants(!)
+// Also look into SynthDef.wrap(!)
+// maybe nodeproxy can be used to manipulate pbindefs?
+// I'm thinking maybe there is a set of pbindefs, for each instrument group
+// ie pad, drone, percussion(s), voice, feature
+// And then using some structure to listen to the control busses to manipulate
+// the values in the pbindef, as well as using the control bus values directly in the pbindef
+// to determine some of the values
+// Maybe using wrapped synthdefs?
+// Or NDefs? Or there may be some pattern object we can use
+// Oh right, look at PatternConductor too
 
- */
-// Ndef(\rev,{
-// 	Out.ar(0,Limiter.ar(FreeVerb.ar(LPF.ar(In.ar([0,1]),10000),mix:0.33),0.7));
-// 	};
-// );
 
-// Pbindef(\voices).play;
-// Tdef(\voices).play;
-// Tdef(\voices).stop;
-// )
-// s.quit;
+// For instance, the Rhythm bus could turn on/off perc defs, go from random to very fixed note sequences, increase/decrease envelope values
+// Energy bus could select certain instruments for defs, turn on/off defs, select certain sequences, as well as adjust the overall tempo of the performance
+// If we want a calm energy vs a frantic energy (irrespective of rhythm)
 
-// Pbindef(\mykick).stop
-// ~mainGroup.stop
+// Rhythm,
 
-*/
+// energy
+// Energy bus may control the kind of energy the piece has
+    // Perhaps going from a calm relaxed energy
+    // to an upbeat energetic feeling
+    // May not need tempo OSC for this
+    // Lower energy may be low tempo, maybe less instruments, more open arrangments, less structured rythm
+    // higher energy may be higher tempo, more instruments, more structured rythm
 
-/*
+//, vibe
+// vibeBus (name tbd) could toggle things like
+    // scale, or sample selection
+    // Perhaps moving from a dark moody vibe to a upbeat happy vibe
+    // A dark moody vibe may use a range of scales such as Aeolian, harmonic minor, melodic minor, locrian
+    // upbeat may use scales such as major, mixolydian, lydian, phrygian, harmonic major, dorian (may be on border)
+    // Dark may use drawn out simple chords
+    // upbeat may use snappier chords, maybe a bit more complex or at least arranged to feel happy,
+
+// theme
+// Theme bus may change from a natural organic theme to a digital techy theme
+    // organic theme may contain field-recordings played out very close to reality
+    //   perhaps nature-based instruments (sticks, wooden pipes, etc)
+    // digital theme may contain synths, perhaps with heavy effects
+
+~setTempo.value(80);
 (
-Pbindef(\mykick,
-    \instrument, \kick,
-    \amp, 1,
-    \note, Pseq([0,0,7,7, 0], inf),
-    \dur, Pseq([1,1,1/2,1/2,1], inf),
-    \rel, 0.2,
-    \out, 0,
-    \group, ~mainGrp
-);
-)
-
-Pbindef(\mykick, \out, ~bus[\jpverbBus]);
-Pbindef(\mykick, \out, 0);
-Pbindef(\mykick).play(~t);
-Pbindef(\mykick).stop;
-
-~setTempo.value(126);
-~adjustTempo.value(1);
-
-
-(
-Pbindef(\t,
-    \instrument, \synthbass,
-    \detune, 4/24,
-    \midinote, Pseq([69, 74, 76, 77, 79, 81, Pseq([81, 79, 81, 82, 79, 81], 2), 82, 81, 79, 77, 76, 74, 74], inf),
-    //\note, Pseq([[0, 3, 7], [2, 5, 8], [3, 7, 10], [5, 8, 12]], inf),
-    \dur, Pseq([Pn(1, 5), 3, Pn(1, 5), 3, Pn(1, 6), 1/2, 1/2, 1, 1, 3, 1, 3], inf),
-    //\dur, Pseq([1/4,1/4,1/4,1/4], inf),
-    \amp, 0.2,
-    \group, ~mainGrp,
-    \out, ~bus[\jpverbBus]
+Pbindef(\pad,
+	\instrument, \apad_mh,
+	\dur, Pseq([4, 8, 4, 4], inf),
+	\midinote, Pexprand(42, 78, inf),
+	\att, Pwhite([0.5, 4.0], inf),
+	\rel, Pwhite([5.0, 10.0], inf)
 ).play;
 )
+p.stop;
+p.set(\midinote, Pseq([2, 4, 2, 4], inf));
 
-~mainGrp.freeAll;
-Pbindef(\t, \out, ~out);
-Pbindef(\t, \out, ~bus[\jpverbBus]);
-Pbindef(\t, \instrument, \ambientpad1);
-Pbindef(\t, \dur, Pseq([1, 2, 1/2, 2], inf));
-Pbindef(\t, \octave, 4);
-Pbindef(\t).play
-Pbindef(\t).stop
+// Create a synth that loads up a buffer (maybe using start/end time markers?)
+// and can apply a few different effects to it
+// The effect levels should be able to be adjusted on the fly
+(
 
-~reverbSynth.set(\sz, 0.5);
-s.queryAllNodes;
-m = Synth(\micin, [\out, ~bus[\jpverbBus]], target:~mainGrp);
-m.set(\out, ~out);
-m.set(\out, ~bus[\jpverbBus]);
-m.free;
-
-
-a = Synth(\synthbass, [\pitch, 36, \detune, (4/24)], target:~mainGrp);
-a.set(\out, ~bus[\reverbBus]);
-~jpverb.set(\out, ~bus[\delayBus]);
-a.set(\out, ~out);
-~reverbSynth.set(\gate, 1);
-a.set(\gate, 1);
-a.set(\gate, 0);
-~limiter.set(\limit, 0.4);
-~reverbSynth.set(\gate, 0);
-
-s.freeAll;
-
-
-
-//6. Stuff to do after server is booted
-~bpm = 120;
-p = Pseq([Pfunc({Synth(\metronome).play; 60/~bpm})], inf).play;
-s.freeAll;
-
-*/
+)
