@@ -10,7 +10,7 @@ Composed of two primary components: a microcontroller connected to multiple inte
 The following dependencies should be installed first
 `sudo apt-get install libgflags-dev libyaml-cpp-dev libspdlog-dev liblo-dev librtmidi-dev`
 
-`cd rpi`
+`cd gene`
 
 `mkdir _install && mkdir _build && cd _build`
 
