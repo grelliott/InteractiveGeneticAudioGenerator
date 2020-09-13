@@ -7,6 +7,9 @@ Composed of two primary components: a microcontroller connected to multiple inte
 ## Build
 
 ### Raspberry Pi
+The following dependencies should be installed first
+`sudo apt-get install libgflags-dev libyaml-cpp-dev libspdlog-dev liblo-dev librtmidi-dev`
+
 `cd rpi`
 
 `mkdir _install && mkdir _build && cd _build`
@@ -14,6 +17,8 @@ Composed of two primary components: a microcontroller connected to multiple inte
 `cmake -DCMAKE_INSTALL_PREFIX=../_install ..`
 
 `make`
+
+`make install`
 
 ### Microcontroller
 `cd avr`

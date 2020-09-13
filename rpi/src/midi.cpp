@@ -22,7 +22,7 @@
 
 #include "midi.hpp"
 
-#include <RtMidi.h>
+#include <rtmidi/RtMidi.h>
 
 #include <map>
 #include <utility>

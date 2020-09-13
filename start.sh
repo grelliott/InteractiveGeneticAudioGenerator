@@ -13,6 +13,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 
 # start SuperCollider
 echo " " | sclang -D $SUPERCOLLIDER_PATH/$SUPERCOLLIDER_SCRIPT & echo $! > /tmp/sclang.pid
+#echo " " | sclang -D $SUPERCOLLIDER_PATH/test.scd& echo $! > /tmp/sclang.pid
 
 sleep 10
 

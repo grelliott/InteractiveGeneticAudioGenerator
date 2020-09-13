@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Flask Test</title>
+    <script type="text/javascript">
+        var ws = new WebSocket("wss://192.168.1.29:5000/status");
+        ws.onopen = function() {
+            console.log("Socket open");
+            ws.send("Hello world!");
+        };
+        
+        ws.onclose = function(evt) {
+            console.log("socket closed");  
+        };
+        ws.onmessage = function(evt) {
+            console.log("Received message: "+evt.data);
+        };
+    </script>
+</head>
+<body>
+    <h1>Hello World!</h1>
+</body>
+</html>
+

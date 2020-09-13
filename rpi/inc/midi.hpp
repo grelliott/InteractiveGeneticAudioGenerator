@@ -23,7 +23,7 @@
 #pragma once
 
 #include <spdlog/spdlog.h>
-#include <RtMidi.h>
+#include <rtmidi/RtMidi.h>
 
 #include <string>
 #include <map>
