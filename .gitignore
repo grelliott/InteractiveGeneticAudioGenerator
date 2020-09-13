@@ -3,6 +3,7 @@ _install/
 notes
 *.log
 server.*
+SuperCollider/buffers/
 SuperCollider/fx/
 SuperCollider/synths/
 .venv
