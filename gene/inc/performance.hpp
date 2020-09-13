@@ -34,8 +34,8 @@ namespace audiogene {
 using KeyMap = std::map<std::string, std::map<std::string, std::string>>;
 
 class Performance {
-    std::shared_ptr<spdlog::logger> logger;
-    YAML::Node config;
+    std::shared_ptr<spdlog::logger> _logger;
+    YAML::Node _config;
 
     std::shared_ptr<audiogene::Audience> audience;
     std::unique_ptr<audiogene::Musician> musician;

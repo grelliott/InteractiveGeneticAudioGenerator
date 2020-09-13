@@ -241,7 +241,7 @@ s.dumpOSC;
     );
 */
 
-    OSCdef.new(\tempo, { |msg, time, addr, port|
+    OSCdef.new(\tempoOSC, { |msg, time, addr, port|
         ~setTempo.value(msg[1]);
     },
     '/gene/tempo'

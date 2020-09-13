@@ -46,19 +46,19 @@
 
 namespace audiogene {
 
-Performance::Performance(const YAML::Node _config): 
-        logger(spdlog::get("log")), 
-        config(_config) {
+Performance::Performance(const YAML::Node config): 
+        _logger(spdlog::get("log")), 
+        _config(config) {
     seatAudience();
     assembleMusicians();
 }
 
 void Performance::seatAudience() {
     audiogene::Audience* audienceSource;
-    YAML::Node inputNode;
 
+    YAML::Node inputNode;
     try {
-        inputNode = config["input"];
+        inputNode = _config["input"];
     } catch (const YAML::Exception& e) {
         throw std::runtime_error("No input source configured");
     }
@@ -71,31 +71,32 @@ void Performance::seatAudience() {
     }
 
     if (inputType == "midi") {
-        logger->info("Input type is MIDI");
+        _logger->info("Input type is MIDI");
         const std::string inputName = (inputNode["name"]) ? inputNode["name"].as<std::string>() : "";
         const KeyMap mapping = inputNode["map"] ? inputNode["map"].as<KeyMap>() : KeyMap();
         audienceSource = new audiogene::MIDI(inputName, mapping);
-    } else if (inputNode["type"].as<std::string>() == "midi") {
-        logger->info("Input type is SPI");
+    } else if (inputType == "spi") {
+        _logger->info("Input type is SPI");
         audienceSource = new audiogene::SPI();
     } else {
         throw std::runtime_error("Unknown input type " + inputType);
     }
 
+    // Set our audience to the source
     audience.reset(audienceSource);
-
+    
     if (!audience->prepare()) {
-        logger->error("Failed to prepare input!");
+        _logger->error("Failed to prepare input!");
         throw std::runtime_error("Failed to prepare input");
     }
-    logger->info("Input prepared");
+    _logger->info("Input prepared");
 }
 
 void Performance::assembleMusicians() {
     std::string scAddr;
     std::string scPort;
     try {
-        YAML::Node scNode(config["SuperCollider"]);
+        YAML::Node scNode(_config["SuperCollider"]);
         scAddr = scNode["addr"].as<std::string>();
         scPort = scNode["port"].as<std::string>();
     } catch (const YAML::Exception& e) {
@@ -104,7 +105,7 @@ void Performance::assembleMusicians() {
 
     std::string oscPort;
     try {
-        YAML::Node oscNode = config["OSC"];
+        YAML::Node oscNode = _config["OSC"];
         oscPort = oscNode["port"].as<std::string>();
     } catch (const YAML::Exception& e) {
         throw std::runtime_error("Missing OSC config");
@@ -127,7 +128,7 @@ std::future<void> Performance::play() {
         // and the next attempt tries to meet these expectations
         KeyMap attributes;
         try {
-            attributes = config["genes"].as<KeyMap>();
+            attributes = _config["genes"].as<KeyMap>();
         } catch (const YAML::Exception& e) {
             throw std::runtime_error("Missing audience attributes");
         }
@@ -138,23 +139,23 @@ std::future<void> Performance::play() {
         size_t populationSize;
         uint8_t topN;
         try {
-            mutationProbability = config["mutationProb"].as<double>();
-            populationSize = config["populationSize"].as<int>();
-            topN = config["keepFittest"].as<int>();
+            mutationProbability = _config["mutationProb"].as<double>();
+            populationSize = _config["populationSize"].as<int>();
+            topN = _config["keepFittest"].as<int>();
         } catch (const YAML::Exception& e) {
             throw std::runtime_error("Genetics misconfigured");
         }
         audiogene::Individual seed(attributes);
         audiogene::Population pop(populationSize, seed, mutationProbability, audience);
-        logger->info("Initial population: {}", pop);
+        _logger->info("Initial population: {}", pop);
         uint8_t i = 0;
 
         while (true) {
             // Make new generations
             std::cout << "loop " << +i++ << std::endl;
-            logger->info("Getting new generation from top {} individuals", topN);
+            _logger->info("Getting new generation from top {} individuals", topN);
             pop.nextGeneration(topN);
-            logger->info("New population: {}", pop);
+            _logger->info("New population: {}", pop);
             musician->setConductor(pop.fittest());
             musician->requestConductor();  // future should return when the thread finishes
         }
