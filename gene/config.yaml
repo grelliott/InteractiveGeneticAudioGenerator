@@ -1,0 +1,65 @@
+---
+name: Beta
+OSC:
+  port: 57130
+populationSize: 24
+keepFittest: 8
+mutationProb: 0.05
+genes:
+    "tempo":
+        min: 80
+        max: 185
+        current: 120
+        step: 5
+        round: false
+        activates: OverBar
+    "scale":
+        min: 1
+        max: 12
+        current: 3
+        step: 1
+        round: true
+        activates: OnBar
+    "energy":
+        min: 1
+        max: 12
+        current: 6
+        ste: 1
+        round: true
+        activates: OnBar
+    "vibe":
+        min: 1
+        max: 12
+        current: 6
+        round: true
+        activates: OnBar
+    "theme":
+        min: 1
+        max: 12
+        current: 6
+        round: true
+        activates: OnBar
+
+# Configure interfaces
+# OSC -> SuperCollider
+SuperCollider:
+    addr: 127.0.0.1
+    port: 57120
+# Input type
+input:
+    type: midi
+    name: "Oxygen 25"
+    map:
+        "tempo":
+            down: 48
+            up: 49
+        "energy":
+            down: 48
+            up: 49
+        "vibe":
+            down: 50
+            up: 51
+        "theme":
+            down: 50
+            up: 51
+
