@@ -20,11 +20,15 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include <spdlog/spdlog.h>
 #include <yaml-cpp/yaml.h>
 
 #include <future>
+#include <map>
 #include <memory>
+#include <string>
 
 #include "audience.hpp"
 #include "musician.hpp"
@@ -42,9 +46,9 @@ class Performance {
 
     void seatAudience();
     void assembleMusicians();
-    
-public:
-    Performance(const YAML::Node config);
+
+ public:
+    explicit Performance(const YAML::Node config);
     Performance(const Performance&) = delete;
     Performance& operator=(Performance const&) = delete;
 

@@ -26,9 +26,9 @@
 #include <lo/lo.h>
 #include <lo/lo_cpp.h>
 
+#include <condition_variable>
 #include <future>
 #include <mutex>
-#include <condition_variable>
 
 namespace audiogene {
 
@@ -47,13 +47,14 @@ OSC::OSC(const std::string& clientPort, const std::string& serverIp, const std::
     std::promise<void> isReadyPromise;
     std::future<void> isReady(isReadyPromise.get_future());
 
-    client.set_callbacks([this, &isReadyPromise] () {
-            _logger->info("OSC client started {}", client.url(), client.port());
-            isReadyPromise.set_value();
-        },
-                         [this] () {
-            _logger->info("OSC client finished");
-        });
+    client.set_callbacks(
+            [this, &isReadyPromise] () {
+                _logger->info("OSC client started {}", client.url(), client.port());
+                isReadyPromise.set_value();
+            },
+            [this] () {
+                _logger->info("OSC client finished");
+            });
 
     client.add_method("/next", "s", [this] (lo_arg **argv, int len) {
         (void)len;

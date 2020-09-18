@@ -108,7 +108,7 @@ Instructions Genetics::Impl::create(const Instructions& seed) const noexcept {
         if (newExpression.round) {
             newExpression.current = std::round(newExpression.current);
         }
-        newInstructions[name] = Instruction(name, newExpression);
+        newInstructions.emplace(name, Instruction(name, newExpression));
     }
     return newInstructions;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Grant Elliott <grant@grantelliott.ca>
+ * Copyright 2020 Grant Elliott <grant@grantelliott.ca>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -20,22 +20,21 @@
  * THE SOFTWARE.
  */
 
-#include "instruction.hpp"
+
+#pragma once
+
+#include <type_traits>
 
 namespace audiogene {
 
-Instruction::Instruction(const AttributeName& name, const Expression& expression) :
-        _name(name),
-        _expression(expression) {
-    // Empty constructor
-}
-
-AttributeName Instruction::name() const {
-    return _name;
-}
-
-Expression Instruction::expression() const {
-    return _expression;
+template<
+    typename T,
+    typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
+>
+T clip(T desired, T min, T max) {
+    if (desired < min) return min;
+    if (desired > max) return max;
+    return desired;
 }
 
 }  // namespace audiogene

@@ -27,9 +27,6 @@
 #include <vector>
 #include <string>
 
-#include "spdlog/spdlog.h"
-#include "spdlog/fmt/ostr.h"
-
 namespace audiogene {
 
 enum class ExpressionActivates {
@@ -44,29 +41,46 @@ struct Expression {
     bool round;
     ExpressionActivates activates;
 
+    Expression(const std::map<std::string, std::string>& d) {
+        try {
+            min = std::stoi(d.at("min"));
+            max = std::stoi(d.at("max"));
+            current = std::stoi(d.at("current"));
+            round = d.at("round") == "true";
+
+            if (d.at("activates") == "OnBar") {
+                activates = ExpressionActivates::OnBar;
+            } else if (d.at("activates") == "OverBar") {
+                activates = ExpressionActivates::OverBar;
+            } else {
+                activates = ExpressionActivates::OnBar;
+            }
+        } catch (const std::out_of_range& e) {
+            throw std::runtime_error("Failed to create expression");
+        }
+
+    }
+
     template<typename OStream>
     friend OStream &operator<<(OStream &os, const Expression &obj) {
         return os << "current: " << obj.current << ", min: " << obj.min << ", max: " << obj.max;
     }
 };
 
-typedef std::string AttributeName;
+using AttributeName = std::string;
 
 class Instruction {
-    AttributeName mName;
-    Expression mExpression;
+    const AttributeName _name;
+    const Expression _expression;
  public:
-    Instruction();
-    Instruction(AttributeName name, std::map<std::string, std::string> expression);
-    Instruction(AttributeName name, Expression expression);
-    ~Instruction() = default;
+    Instruction(const AttributeName& name, const Expression& expression);
 
     AttributeName name() const;
     Expression expression() const;
 
     template<typename OStream>
     friend OStream &operator<<(OStream &os, const Instruction &obj) {
-        return os << "Instruction " << obj.mName <<  ": " << obj.mExpression;
+        return os << "Instruction " << obj.name() <<  ": " << obj.expression();
     }
 };
 

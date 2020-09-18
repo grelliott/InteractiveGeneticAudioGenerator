@@ -36,13 +36,14 @@ namespace audiogene {
 Population::Population(const uint8_t n,
                        const Individual& seed,
                        const double mutationProbability,
-                       const std::shared_ptr<Audience> audience):
+                       const std::shared_ptr<Audience> audience,
+                       const size_t topN):
         _logger(spdlog::get("log")),
         _genetics(mutationProbability),
-        mSize(n),
-        mIndividuals(mSize),
-        mGeneration(0),
-        mAudience(audience) {
+        _size(n),
+        _generation(0),
+        _topN(topN),
+        _audience(audience) {
     _logger->info("Initializing RNG");
     mRng.seed(std::chrono::system_clock::now().time_since_epoch().count());
 
@@ -51,7 +52,7 @@ Population::Population(const uint8_t n,
 }
 
 void Population::initializePopulation(const Individual& seed) {
-    std::generate(mIndividuals.begin(), mIndividuals.end(), [this, &seed] () {
+    std::generate_n(std::back_inserter(_individuals), _size, [this, &seed] () -> Individual {
         return Individual(_genetics.create(seed.instructions()));
     });
 }
@@ -61,7 +62,7 @@ double Population::similarity(const Individual& individual) {
     for (const std::pair<AttributeName, Instruction>& i : individual.instructions()) {
         Instruction instruction = i.second;
         const double curVal = instruction.expression().current;
-        const double ideal = mAudience->preferences()[instruction.name()].current;
+        const double ideal = _audience->preferences().at(instruction.name()).current;
         similarity += 1 - (std::abs(ideal - curVal))
                       / (instruction.expression().max - instruction.expression().min);
     }
@@ -69,7 +70,7 @@ double Population::similarity(const Individual& individual) {
 }
 
 void Population::sortPopulation() {
-    std::sort(mIndividuals.begin(), mIndividuals.end(), [this] (const Individual& lhs, const Individual& rhs) -> bool {
+    std::sort(_individuals.begin(), _individuals.end(), [this] (const Individual& lhs, const Individual& rhs) -> bool {
         return (similarity(lhs) / lhs.instructions().size()) > (similarity(rhs) / rhs.instructions().size());
     });
 }
@@ -97,15 +98,15 @@ Individual Population::breed(std::pair<Individual, Individual> parents) {
         _genetics.combine(std::make_pair(parents.first.instructions(), parents.second.instructions()))));
 }
 
-void Population::nextGeneration(const uint8_t topN) {
-    mGeneration = mGeneration + 1;
+void Population::nextGeneration() {
+    _generation = _generation + 1;
     // copy fittest to temporary
-    Individuals fittest(mIndividuals.begin(), mIndividuals.begin() + topN);
+    Individuals fittest(_individuals.begin(), _individuals.begin() + _topN);
     // Remove unfittest individuals
-    mIndividuals.erase(mIndividuals.begin() + topN, mIndividuals.end());
+    _individuals.erase(_individuals.begin() + _topN, _individuals.end());
 
     // Refill with new children
-    std::generate_n(std::back_inserter(mIndividuals), mSize - topN, [this, &fittest] () -> Individual {
+    std::generate_n(std::back_inserter(_individuals), _size - _topN, [this, &fittest] () -> Individual {
         return breed(getParents(fittest));
     });
 
@@ -113,7 +114,7 @@ void Population::nextGeneration(const uint8_t topN) {
 }
 
 const Individual Population::fittest() {
-    return mIndividuals.front();
+    return _individuals.front();
 }
 
 }  // namespace audiogene

@@ -22,34 +22,32 @@
 
 #pragma once
 
-#include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
+#include <spdlog/spdlog.h>
 
 #include <iostream>
-#include <vector>
-#include <string>
 #include <map>
+#include <memory>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "instruction.hpp"
 
 namespace audiogene {
 
 class Individual {
-    std::shared_ptr<spdlog::logger> _logger;
-    Instructions _instructions;
     uint32_t _id;
+    Instructions _instructions;
 
     static uint32_t s_id;
  public:
-    Individual() {}
     /*! Create an individual from config values */
-    explicit Individual(const std::map<std::string, std::map<std::string, std::string>> instructions);
-    explicit Individual(const Instructions instructions);
-    ~Individual() = default;
+    explicit Individual(const std::map<std::string, std::map<std::string, std::string>>& instructions);
+    explicit Individual(const Instructions& instructions);
 
     Instructions instructions() const noexcept;
-    Instruction instruction(const std::string& name) const noexcept;
+    Instruction instruction(const std::string& name) const;
 
     template<typename OStream>
     friend OStream &operator<<(OStream &os, const Individual &obj) {

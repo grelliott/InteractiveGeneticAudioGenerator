@@ -24,12 +24,12 @@
 
 #include <rtmidi/RtMidi.h>
 
-#include <map>
-#include <utility>
 #include <algorithm>
 #include <atomic>
 #include <functional>
+#include <map>
 #include <sstream>
+#include <utility>
 
 namespace audiogene {
 
@@ -58,7 +58,7 @@ MIDI::MIDI(const std::string& name, const std::map<AttributeName, std::map<std::
 
 bool MIDI::prepare() {
     uint16_t nPorts = midiin->getPortCount();
-    if ( nPorts == 0 ) {
+    if (nPorts == 0) {
         _logger->error("No ports available!");
         return false;
     } else {
@@ -77,6 +77,8 @@ bool MIDI::prepare() {
                     break;
                 }
             } catch (const RtMidiError& error) {
+                // TODO(grant) probably should raise a runtime error and add message
+                // Or at least just log message
                 error.printMessage();
             }
         }

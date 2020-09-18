@@ -24,6 +24,8 @@
 
 #include <spdlog/spdlog.h>
 
+#include <memory>
+
 #include "audience.hpp"
 
 namespace audiogene {

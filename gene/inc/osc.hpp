@@ -22,19 +22,19 @@
 
 #pragma once
 
-#include <spdlog/spdlog.h>
 #include <lo/lo.h>
 #include <lo/lo_cpp.h>
+#include <spdlog/spdlog.h>
 
-#include <iostream>
-#include <string>
-#include <mutex>
 #include <condition_variable>
+#include <iostream>
 #include <memory>
+#include <mutex>
+#include <string>
 
-#include "musician.hpp"
-#include "instruction.hpp"
 #include "individual.hpp"
+#include "instruction.hpp"
+#include "musician.hpp"
 
 namespace audiogene {
 
@@ -53,7 +53,7 @@ class OSC: public Musician {
     ~OSC() = default;
 
     virtual void requestConductor();
-    virtual void setConductor(const Individual& conductor) final;
+    void setConductor(const Individual& conductor) final;
 };
 
 }  // namespace audiogene

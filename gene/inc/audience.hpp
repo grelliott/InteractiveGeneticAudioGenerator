@@ -22,17 +22,19 @@
 
 #pragma once
 
-#include <string>
 #include <map>
+#include <string>
 #include <utility>
 
+#include "math.hpp"
 #include "preference.hpp"
 
 namespace audiogene {
 
-/*! An interface that each possible input source must implement
- *
- */
+using Attribute = std::map<std::string, std::string>;
+using Attributes = std::map<AttributeName, Attribute>;
+
+/*! An interface that an input source must implement */
 class Audience {
  protected:
     Preferences mPreferences;
@@ -40,37 +42,24 @@ class Audience {
  public:
     virtual bool prepare() = 0;
 
-    void initializePreferences(const std::map<std::string, std::map<std::string, std::string>> attributes) {
-        // attributeName => k/v (current)
-        for (const std::pair<AttributeName, std::map<std::string, std::string>>& p : attributes) {
-            AttributeName name = p.first;
-            std::map<std::string, std::string> params = p.second;
-            try {
-                Preference p;
-                p.current = std::stoi(params.at("current"));
-                p.min = std::stoi(params.at("min"));
-                p.max = std::stoi(params.at("max"));
-                mPreferences[name] = p;
-            } catch (const std::out_of_range& e) {
-                continue;
-            }
+    void initializePreferences(const Attributes& attributes) {
+        for (const std::pair<AttributeName, Attribute>& p : attributes) {
+            mPreferences.emplace(p.first, p.second);
         }
     }
 
-    void preferenceUpdated(const AttributeName name, const Preference& preference) {
+    void preferenceUpdated(const AttributeName& name, const Preference& preference) {
         try {
-        mPreferences.at(name) = preference;
+            mPreferences.at(name) = preference;
         } catch (const std::out_of_range& e) {
             return;
         }
     }
 
-    void preferenceUpdated(const AttributeName name, const int direction) {
+    void preferenceUpdated(const AttributeName& name, const int direction) {
         try {
             Preference p = mPreferences.at(name);
-            p.current += direction;
-            if (p.current < p.min) p.current = p.min;
-            if (p.current > p.max) p.current = p.max;
+            p.current = clip(p.current + direction, p.min, p.max);
             preferenceUpdated(name, p);
         } catch (const std::out_of_range& e) {
             return;

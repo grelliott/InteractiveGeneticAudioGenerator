@@ -33,31 +33,27 @@ namespace audiogene {
 
 uint32_t Individual::s_id = 0;
 
-Individual::Individual(const std::map<std::string, std::map<std::string, std::string>> instructions):
-    _logger(spdlog::get("log")),
-    _id(s_id++) {
-    // make instructions from initial config
-
-    decltype(instructions)::const_iterator it;
+Individual::Individual(const std::map<std::string, std::map<std::string, std::string>>& instructions):
+        _id(s_id++) {
+    std::remove_reference<decltype(instructions)>::type::const_iterator it;
     for (it = instructions.begin(); it != instructions.end(); ++it) {
-        std::string name = it->first;
-        std::map<std::string, std::string> expression = it->second;
-        _instructions[name] = Instruction(name, expression);
+        const std::string name = it->first;
+        const std::map<std::string, std::string> expression = it->second;
+        _instructions.emplace(name, Instruction(name, expression));
     }
 }
 
-Individual::Individual(const Instructions instructions):
-    _logger(spdlog::get("log")),
-    _instructions(instructions),
-    _id(s_id++) {
-        // empty constructor
+Individual::Individual(const Instructions& instructions):
+        _id(s_id++),
+        _instructions(instructions) {
+    // empty constructor
 }
 
-Instruction Individual::instruction(const std::string& name) const noexcept {
+Instruction Individual::instruction(const std::string& name) const {
     try {
         return _instructions.at(name);
     } catch (const std::out_of_range& e) {
-    return Instruction();
+        throw std::runtime_error("Failed to find instruction " + name);
     }
 }
 

@@ -44,14 +44,15 @@ class Population {
     mutable std::default_random_engine mRng;
     const Genetics _genetics;
 
-    const size_t mSize;
-    Individuals mIndividuals;
-
-    uint8_t mGeneration;
+    const size_t _size;
+    Individuals _individuals;
+    uint32_t _generation;
+    const size_t _topN;
 
     // When it's time to create a new generation, get preferences from the audience
     // and sort individuals based on that
-    std::shared_ptr<Audience> mAudience;
+    // TODO(grant) remove this
+    std::shared_ptr<Audience> _audience;
 
     void initializePopulation(const Individual& seed);
     void sortPopulation();
@@ -65,17 +66,17 @@ class Population {
 
  public:
     Population() = delete;
-    Population(const uint8_t n, const Individual& seed, const double mutationProbability, const std::shared_ptr<Audience> audience);
+    Population(const uint8_t n, const Individual& seed, const double mutationProbability, const std::shared_ptr<Audience> audience, const size_t topN);
     ~Population() = default;
 
     const Individual fittest();
 
-    void nextGeneration(const uint8_t n);
+    void nextGeneration();
 
     template<typename OStream>
     friend OStream &operator<<(OStream &os, const Population &obj) {
         os << "Population \n";
-        for (const Individual &individual : obj.mIndividuals) {
+        for (const Individual &individual : obj._individuals) {
             os << "\t" << individual << std::endl;
         }
         return os;

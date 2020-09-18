@@ -46,8 +46,8 @@
 
 namespace audiogene {
 
-Performance::Performance(const YAML::Node config): 
-        _logger(spdlog::get("log")), 
+Performance::Performance(const YAML::Node config):
+        _logger(spdlog::get("log")),
         _config(config) {
     seatAudience();
     assembleMusicians();
@@ -84,7 +84,7 @@ void Performance::seatAudience() {
 
     // Set our audience to the source
     audience.reset(audienceSource);
-    
+
     if (!audience->prepare()) {
         _logger->error("Failed to prepare input!");
         throw std::runtime_error("Failed to prepare input");
@@ -115,8 +115,8 @@ void Performance::assembleMusicians() {
     musician.reset(new audiogene::OSC(oscPort, scAddr, scPort));
     std::cout << "SC is ready" << std::endl;
 
-    //musician->send("/notify", "1");
-    //std::cout << "Sent notify"<<std::endl;
+    // musician->send("/notify", "1");
+    // std::cout << "Sent notify"<<std::endl;
 }
 
 std::future<void> Performance::play() {
@@ -146,15 +146,15 @@ std::future<void> Performance::play() {
             throw std::runtime_error("Genetics misconfigured");
         }
         audiogene::Individual seed(attributes);
-        audiogene::Population pop(populationSize, seed, mutationProbability, audience);
+        audiogene::Population pop(populationSize, seed, mutationProbability, audience, topN);
         _logger->info("Initial population: {}", pop);
         uint8_t i = 0;
 
         while (true) {
             // Make new generations
             std::cout << "loop " << +i++ << std::endl;
-            _logger->info("Getting new generation from top {} individuals", topN);
-            pop.nextGeneration(topN);
+            _logger->info("Getting new generation");
+            pop.nextGeneration();
             _logger->info("New population: {}", pop);
             musician->setConductor(pop.fittest());
             musician->requestConductor();  // future should return when the thread finishes

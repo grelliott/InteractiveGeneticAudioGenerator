@@ -28,10 +28,22 @@
 
 namespace audiogene {
 
+using Attribute = std::map<std::string, std::string>;
+
 struct Preference {
     double min;
     double max;
     double current;
+
+    explicit Preference(const Attribute& attribute) {
+        try {
+            current = std::stoi(attribute.at("current"));
+            min = std::stoi(attribute.at("min"));
+            max = std::stoi(attribute.at("max"));
+        } catch (const std::out_of_range& e) {
+            throw std::runtime_error("Invalid attribute");
+        }
+    }
 };
 
 using AttributeName = std::string;
