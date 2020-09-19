@@ -34,6 +34,7 @@
 #include "individual.hpp"
 #include "genetics.hpp"
 #include "audience.hpp"
+#include "blockingqueue.hpp"
 
 namespace audiogene {
 
@@ -51,8 +52,7 @@ class Population {
 
     // When it's time to create a new generation, get preferences from the audience
     // and sort individuals based on that
-    // TODO(grant) remove this
-    std::shared_ptr<Audience> _audience;
+    mutable Preferences _audiencePreferences;
 
     void initializePopulation(const Individual& seed);
     void sortPopulation();
@@ -66,8 +66,10 @@ class Population {
 
  public:
     Population() = delete;
-    Population(const uint8_t n, const Individual& seed, const double mutationProbability, const std::shared_ptr<Audience> audience, const size_t topN);
+    Population(const uint8_t n, const Individual& seed, const double mutationProbability, const size_t topN);
     ~Population() = default;
+
+    void setPreferences(std::shared_ptr<moodycamel::BlockingConcurrentQueue<Preferences>> preferencesQueue);
 
     const Individual fittest();
 

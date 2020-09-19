@@ -39,7 +39,7 @@ Individual::Individual(const std::map<std::string, std::map<std::string, std::st
     for (it = instructions.begin(); it != instructions.end(); ++it) {
         const std::string name = it->first;
         const std::map<std::string, std::string> expression = it->second;
-        _instructions.emplace(name, Instruction(name, expression));
+        _instructions.emplace(name, Instruction(name, Expression(expression)));
     }
 }
 

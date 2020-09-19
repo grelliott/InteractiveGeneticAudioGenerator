@@ -126,15 +126,19 @@ std::future<void> Performance::play() {
         // An audience gives feedback on various criteria
         // The population takes that feedback and determines which of its individuals best represent that feedback
         // and the next attempt tries to meet these expectations
+        auto preferencesQueue = std::make_shared<moodycamel::BlockingConcurrentQueue<Preferences>>();
+        audience->writeToPreferences(preferencesQueue);
+
+        // Initialize preferences of audience
         KeyMap attributes;
         try {
             attributes = _config["genes"].as<KeyMap>();
         } catch (const YAML::Exception& e) {
             throw std::runtime_error("Missing audience attributes");
         }
-        // Initialize preferences of audience
         audience->initializePreferences(attributes);
 
+        // Generate potential Conductors
         double mutationProbability;
         size_t populationSize;
         uint8_t topN;
@@ -145,19 +149,23 @@ std::future<void> Performance::play() {
         } catch (const YAML::Exception& e) {
             throw std::runtime_error("Genetics misconfigured");
         }
-        audiogene::Individual seed(attributes);
-        audiogene::Population pop(populationSize, seed, mutationProbability, audience, topN);
-        _logger->info("Initial population: {}", pop);
-        uint8_t i = 0;
+        Individual seed(attributes);
+        Population conductors(populationSize, seed, mutationProbability, topN);
+        _logger->info("Initial population: {}", conductors);
 
-        while (true) {
-            // Make new generations
+        // Connect audience to conductor population
+        // The conductors should keep asking for the reaction of the audience
+        conductors.setPreferences(preferencesQueue);
+
+        // Make new generations
+        uint8_t i = 0;
+        while (i <= 5) {
             std::cout << "loop " << +i++ << std::endl;
             _logger->info("Getting new generation");
-            pop.nextGeneration();
-            _logger->info("New population: {}", pop);
-            musician->setConductor(pop.fittest());
-            musician->requestConductor();  // future should return when the thread finishes
+            conductors.nextGeneration();
+            _logger->info("New population: {}", conductors);
+            musician->setConductor(conductors.fittest());
+            std::this_thread::sleep_for(std::chrono::seconds(2));
         }
     });
 }

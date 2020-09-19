@@ -41,7 +41,7 @@ struct Expression {
     bool round;
     ExpressionActivates activates;
 
-    Expression(const std::map<std::string, std::string>& d) {
+    explicit Expression(const std::map<std::string, std::string>& d) {
         try {
             min = std::stoi(d.at("min"));
             max = std::stoi(d.at("max"));
@@ -58,7 +58,6 @@ struct Expression {
         } catch (const std::out_of_range& e) {
             throw std::runtime_error("Failed to create expression");
         }
-
     }
 
     template<typename OStream>
@@ -73,7 +72,7 @@ class Instruction {
     const AttributeName _name;
     const Expression _expression;
  public:
-    Instruction(const AttributeName& name, const Expression& expression);
+    explicit Instruction(const AttributeName& name, const Expression& expression);
 
     AttributeName name() const;
     Expression expression() const;

@@ -24,26 +24,26 @@
 
 #include <spdlog/spdlog.h>
 
-#include <cstdint>
-#include <iostream>
 #include <algorithm>
-#include <random>
-#include <ctime>
 #include <cmath>
+#include <cstdint>
+#include <ctime>
+#include <iostream>
+#include <memory>
+#include <random>
+#include <thread>
 
 namespace audiogene {
 
 Population::Population(const uint8_t n,
                        const Individual& seed,
                        const double mutationProbability,
-                       const std::shared_ptr<Audience> audience,
                        const size_t topN):
         _logger(spdlog::get("log")),
         _genetics(mutationProbability),
         _size(n),
         _generation(0),
-        _topN(topN),
-        _audience(audience) {
+        _topN(topN) {
     _logger->info("Initializing RNG");
     mRng.seed(std::chrono::system_clock::now().time_since_epoch().count());
 
@@ -62,7 +62,7 @@ double Population::similarity(const Individual& individual) {
     for (const std::pair<AttributeName, Instruction>& i : individual.instructions()) {
         Instruction instruction = i.second;
         const double curVal = instruction.expression().current;
-        const double ideal = _audience->preferences().at(instruction.name()).current;
+        const double ideal = _audiencePreferences.at(instruction.name()).current;
         similarity += 1 - (std::abs(ideal - curVal))
                       / (instruction.expression().max - instruction.expression().min);
     }
@@ -111,6 +111,17 @@ void Population::nextGeneration() {
     });
 
     sortPopulation();
+}
+
+void Population::setPreferences(std::shared_ptr<moodycamel::BlockingConcurrentQueue<Preferences>> preferencesQueue) {
+    // run a thread that waits on the preferencesQueue and updates
+    std::thread t([preferencesQueue, this] () {
+        while (true) {
+            preferencesQueue->wait_dequeue(_audiencePreferences);
+            // notify to get a new conductor
+        }
+    });
+    t.detach();
 }
 
 const Individual Population::fittest() {

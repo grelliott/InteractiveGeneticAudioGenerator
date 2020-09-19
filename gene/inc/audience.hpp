@@ -22,12 +22,16 @@
 
 #pragma once
 
+#include <chrono>
 #include <map>
+#include <memory>
+#include <queue>
 #include <string>
 #include <utility>
 
 #include "math/math.hpp"
 #include "preference.hpp"
+#include "blockingqueue.hpp"
 
 namespace audiogene {
 
@@ -38,6 +42,7 @@ using Attributes = std::map<AttributeName, Attribute>;
 class Audience {
  protected:
     Preferences mPreferences;
+    std::shared_ptr<moodycamel::BlockingConcurrentQueue<Preferences>> _preferencesQueue;
     math::Math _math;
 
  public:
@@ -47,11 +52,24 @@ class Audience {
         for (const std::pair<AttributeName, Attribute>& p : attributes) {
             mPreferences.emplace(p.first, p.second);
         }
+        _preferencesQueue->enqueue(mPreferences);
     }
 
+    void writeToPreferences(const std::shared_ptr<moodycamel::BlockingConcurrentQueue<Preferences>>& preferencesQueue) {
+        _preferencesQueue = preferencesQueue;
+    }
+
+    /*
+    std::shared_ptr<moodycamel::BlockingConcurrentQueue<Preferences>> providePreferences() {
+        return _preferencesQueue;
+    }
+    */
     void preferenceUpdated(const AttributeName& name, const Preference& preference) {
         try {
             mPreferences.at(name) = preference;
+            _preferencesQueue->enqueue(mPreferences);
+            // notify queue has item
+            std::this_thread::sleep_for(std::chrono::seconds(2));
         } catch (const std::out_of_range& e) {
             return;
         }
