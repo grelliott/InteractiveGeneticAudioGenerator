@@ -23,18 +23,49 @@
 
 #pragma once
 
+#include <chrono>
+#include <random>
 #include <type_traits>
 
 namespace audiogene {
+namespace math {
 
-template<
-    typename T,
-    typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
->
-T clip(T desired, T min, T max) {
-    if (desired < min) return min;
-    if (desired > max) return max;
-    return desired;
-}
+class Math {
+    mutable std::default_random_engine _rng;
 
+ public:
+    Math();
+
+    bool flipCoin() const;
+    bool didEventOccur(const double probability) const;
+
+    template<
+        typename T,
+        typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
+    >
+    T clip(T desired, T min, T max) const {
+        if (desired < min) return min;
+        if (desired > max) return max;
+        return desired;
+    }
+
+    template<
+        typename T,
+        typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
+    >
+    T stddev(const T min, const T max) const {
+        return (max - min) / 6;
+    }
+
+    template<
+        typename T,
+        typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
+    >
+    T normalDistribution(const T mean, const T stddev) const {
+        std::normal_distribution<T> d(mean, stddev);
+        return d(_rng);
+    }
+};
+
+}  // namespace math
 }  // namespace audiogene

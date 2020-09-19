@@ -26,7 +26,7 @@
 #include <string>
 #include <utility>
 
-#include "math.hpp"
+#include "math/math.hpp"
 #include "preference.hpp"
 
 namespace audiogene {
@@ -38,6 +38,7 @@ using Attributes = std::map<AttributeName, Attribute>;
 class Audience {
  protected:
     Preferences mPreferences;
+    math::Math _math;
 
  public:
     virtual bool prepare() = 0;
@@ -59,7 +60,7 @@ class Audience {
     void preferenceUpdated(const AttributeName& name, const int direction) {
         try {
             Preference p = mPreferences.at(name);
-            p.current = clip(p.current + direction, p.min, p.max);
+            p.current = _math.clip(p.current + direction, p.min, p.max);
             preferenceUpdated(name, p);
         } catch (const std::out_of_range& e) {
             return;

@@ -35,8 +35,8 @@ enum class ExpressionActivates {
 };
 
 struct Expression {
-    uint32_t min;
-    uint32_t max;
+    double min;
+    double max;
     double current;
     bool round;
     ExpressionActivates activates;

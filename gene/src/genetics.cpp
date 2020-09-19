@@ -24,28 +24,25 @@
 
 #include <spdlog/spdlog.h>
 
+#include <cmath>
 #include <cstdint>
+#include <ctime>
 #include <iostream>
 #include <memory>
 #include <random>
-#include <ctime>
-#include <cmath>
+
+#include "math/math.hpp"
 
 namespace audiogene {
 
 // Keep implementation header in source so it's not included
 class Genetics::Impl {
     std::shared_ptr<spdlog::logger> _logger;
-    mutable std::default_random_engine mRng;
+    math::Math _math;
     const double _mutationProbability;
-
-    double stddev(const double min, const double max) const noexcept;
 
     // template??
     double normalDistribution(const Expression& expression) const noexcept;
-
-    // template??
-    double normalDistribution(const double mean, const double stddev) const noexcept;
 
     Instructions combine_randomZipper(const std::pair<Instructions, Instructions>& parents) const noexcept;
     Expression mutateExpression(const Expression orig,
@@ -92,19 +89,14 @@ Instructions Genetics::mutate(const Instructions instructions) const noexcept {
 Genetics::Impl::Impl(const double mutationProbability):
         _logger(spdlog::get("log")),
         _mutationProbability(mutationProbability) {
-    _logger->info("Initializing RNG");
-    mRng.seed(std::chrono::system_clock::now().time_since_epoch().count());
+    // Empty constructor
 }
 
 Instructions Genetics::Impl::create(const Instructions& seed) const noexcept {
     Instructions newInstructions;
     for (const std::pair<AttributeName, Instruction>& i : seed) {
         AttributeName name(i.first);
-        Expression e = i.second.expression();
-        Expression newExpression(e);
-        do {
-            newExpression.current = normalDistribution(e.current, stddev(e.min, e.max));
-        } while ( newExpression.current < newExpression.min || newExpression.current > newExpression.max );
+        Expression newExpression(i.second.expression());
         if (newExpression.round) {
             newExpression.current = std::round(newExpression.current);
         }
@@ -117,56 +109,41 @@ Instructions Genetics::Impl::combine(const std::pair<Instructions, Instructions>
     return combine_randomZipper(parents);
 }
 
-
 Instructions Genetics::Impl::mutate(const Instructions instructions) const noexcept {
-    std::uniform_real_distribution<double> d(0.0, 1.0);
     Instructions newInstructions;
 
     for (const auto& kv : instructions) {
         AttributeName attributeName = kv.first;
         Instruction instruction = kv.second;
+
         // Check if we should mutate or not
-        if (d(mRng) >= _mutationProbability) {
-            // don't mutate, just add new instruction as-is
+        if (_math.didEventOccur(_mutationProbability)) {
+            // do the mutation thing
+            Expression mutatedExpression(mutateExpression(instruction.expression(), [this] (const Expression& expression) {
+                // This is the distribution used to select a new expression
+                return normalDistribution(expression);
+            }));
+
+            newInstructions.emplace(attributeName, Instruction(attributeName, mutatedExpression));
+        } else {
             newInstructions.emplace(attributeName, instruction);
         }
-        // do the mutation thing
-        Expression mutatedExpression(mutateExpression(instruction.expression(), [this] (const Expression& expression) -> double {
-            // This is the distribution used to select a new expression
-            return normalDistribution(expression);
-        }));
-
-        Instruction mutatedInstruction(attributeName, mutatedExpression);
-        newInstructions.emplace(attributeName, mutatedInstruction);
     }
 
     return newInstructions;
 }
 
 Instructions Genetics::Impl::combine_randomZipper(const std::pair<Instructions, Instructions>& parents) const noexcept {
-    // 50/50 chance of parent 1 vs parent 2
-    std::uniform_int_distribution<int> d(0, 1);
-
     Instructions parent1 = parents.first;
     Instructions parent2 = parents.second;
     Instructions childInstructions;
 
     for (const auto& kv : parent1) {
         AttributeName attributeName = kv.first;
-        // If 0, pick first parent
-        // If 1, pick second
-        if (d(mRng) == 0) {
+        if (_math.flipCoin()) {
             childInstructions.emplace(attributeName, parent1.at(attributeName));
-            continue;
-        }
-        // Choice was 1, pick second parent's instructions
-        try {
+        } else {
             childInstructions.emplace(attributeName, parent2.at(attributeName));
-        } catch (const std::out_of_range& e) {
-            // oops
-            _logger->warn("Missing attribute {} in parent2", attributeName);
-            // Just add first parents instruction item
-            childInstructions.emplace(attributeName, parent1.at(attributeName));
         }
     }
     return childInstructions;
@@ -184,17 +161,10 @@ Expression Genetics::Impl::mutateExpression(const Expression orig,
     return mutatedExpression;
 }
 
-double Genetics::Impl::stddev(const double min, const double max) const noexcept {
-    return (max - min)/6;
-}
-
 double Genetics::Impl::normalDistribution(const Expression& expression) const noexcept {
-    return normalDistribution(expression.current, stddev(expression.min, expression.max));
-}
-
-double Genetics::Impl::normalDistribution(const double mean, const double stddev) const noexcept {
-    std::normal_distribution<double> d(mean, stddev);
-    return d(mRng);
+    double current = expression.current;
+    double sd = _math.stddev(expression.min, expression.max);
+    return _math.normalDistribution(current, sd);
 }
 
 }  // namespace audiogene

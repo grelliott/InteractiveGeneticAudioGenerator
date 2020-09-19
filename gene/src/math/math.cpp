@@ -20,34 +20,24 @@
  * THE SOFTWARE.
  */
 
-#pragma once
-
-#include <utility>
-#include <memory>
-
-#include "instruction.hpp"
+#include "math/math.hpp"
 
 namespace audiogene {
+namespace math {
 
-class Genetics {
-    // forward-declare implementation class
-    class Impl;
-    std::unique_ptr<Impl> _impl;
-    const Impl* Pimpl() const { return _impl.get(); }
-    Impl* Pimpl() { return _impl.get(); }
- public:
-    explicit Genetics(const double mutationProbability);
-    ~Genetics();
+Math::Math() {
+    _rng.seed(std::chrono::system_clock::now().time_since_epoch().count());
+}
 
-    Genetics(Genetics&& rhs) noexcept;
-    Genetics& operator=(Genetics&& rhs) noexcept;
+bool Math::flipCoin() const {
+    std::uniform_int_distribution<int> d(0, 1);
+    return d(_rng) == 0;
+}
 
-    Genetics(const Genetics& rhs);
-    Genetics& operator=(const Genetics& rhs);
+bool Math::didEventOccur(const double probability) const {
+    std::uniform_real_distribution<double> d(0.0, 1.0);
+    return d(_rng) >= probability;
+}
 
-    Instructions create(const Instructions& seed) const noexcept;
-    Instructions combine(const std::pair<Instructions, Instructions>& parents) const noexcept;
-    Instructions mutate(const Instructions instructions) const noexcept;
-};
-
+}  // namespace math
 }  // namespace audiogene
