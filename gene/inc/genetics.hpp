@@ -47,7 +47,7 @@ class Genetics {
 
     Instructions create(const Instructions& seed) const noexcept;
     Instructions combine(const std::pair<Instructions, Instructions>& parents) const noexcept;
-    Instructions mutate(const Instructions instructions) const noexcept;
+    Instructions mutate(const Instructions& instructions) const noexcept;
 };
 
 }  // namespace audiogene

@@ -25,26 +25,25 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
 
-#include <vector>
-#include <utility>
-#include <algorithm>
-#include <random>
+//#include <algorithm>
 #include <memory>
 #include <mutex>
+#include <utility>
+#include <vector>
 
-#include "individual.hpp"
-#include "genetics.hpp"
-#include "audience.hpp"
 #include "blockingqueue.hpp"
+#include "audience.hpp"
+#include "genetics.hpp"
+#include "individual.hpp"
+#include "math/math.hpp"
 
 namespace audiogene {
 
 using Individuals = std::vector<Individual>;
 
 class Population {
-    std::shared_ptr<spdlog::logger> _logger;
-    //TODO finish moving to math
-    mutable std::default_random_engine mRng;
+    mutable std::shared_ptr<spdlog::logger> _logger;
+    const math::Math _math;
     const Genetics _genetics;
 
     const size_t _size;
@@ -54,7 +53,7 @@ class Population {
 
     // When it's time to create a new generation, get preferences from the audience
     // and sort individuals based on that
-    mutable Preferences _audiencePreferences;
+    Preferences _audiencePreferences;
     std::timed_mutex _havePreferences;
 
     void initializePopulation(const Individual& seed);
@@ -63,8 +62,8 @@ class Population {
 
     // These are related to the genetics of a population
     // Maybe these should be in a different class
-    std::pair<Individual, Individual> getParents(Individuals fittest);
-    Individual breed(std::pair<Individual, Individual> parents);
+    std::pair<Individual, Individual> getParents(const Individuals& fittest);
+    Individual breed(const std::pair<Individual, Individual>& parents);
     void mutate(Individual child);
 
  public:
@@ -72,7 +71,7 @@ class Population {
     Population(const uint8_t n, const Individual& seed, const double mutationProbability, const size_t topN);
     ~Population() = default;
 
-    void setPreferences(std::shared_ptr<moodycamel::BlockingConcurrentQueue<Preferences>> preferencesQueue);
+    void setPreferences(const std::shared_ptr<moodycamel::BlockingConcurrentQueue<Preferences>>& preferencesQueue);
 
     const Individual fittest();
 

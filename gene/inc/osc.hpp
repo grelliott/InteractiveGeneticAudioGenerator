@@ -52,7 +52,7 @@ class OSC: public Musician {
     OSC(const std::string& clientPort, const std::string& serverIp, const std::string& serverPort);
     ~OSC() = default;
 
-    virtual void requestConductor();
+    void requestConductor() final;
     void setConductor(const Individual& conductor) final;
 };
 

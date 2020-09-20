@@ -20,12 +20,13 @@
  * THE SOFTWARE.
  */
 
-
 #pragma once
 
 #include <chrono>
 #include <random>
 #include <type_traits>
+#include <utility>
+#include <vector>
 
 namespace audiogene {
 namespace math {
@@ -38,6 +39,14 @@ class Math {
 
     bool flipCoin() const;
     bool didEventOccur(const double probability) const;
+
+    template<
+        typename T,
+        typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
+    >
+    T similarity(const T ideal, const T actual, const T min, const T max) const {
+        return 1 - std::abs(ideal - actual) / max - min;
+    }
 
     template<
         typename T,
@@ -64,6 +73,19 @@ class Math {
     T normalDistribution(const T mean, const T stddev) const {
         std::normal_distribution<T> d(mean, stddev);
         return d(_rng);
+    }
+
+    template<
+        typename T
+    >
+    std::pair<int, int> uniquePair(const std::vector<T>& container) const {
+        std::uniform_int_distribution<int> choose(0, std::distance(container.begin(), container.end() - 1));
+        int first = choose(_rng);
+        int second;
+        do {
+            second = choose(_rng);
+        } while (second == first);
+        return std::make_pair(first, second);
     }
 };
 

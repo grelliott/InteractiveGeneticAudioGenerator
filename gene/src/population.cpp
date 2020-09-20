@@ -25,14 +25,10 @@
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
-#include <cmath>
-#include <cstdint>
-#include <ctime>
-#include <future>
-#include <iostream>
 #include <memory>
-#include <random>
 #include <thread>
+
+#include "math/math.hpp"
 
 namespace audiogene {
 
@@ -45,9 +41,6 @@ Population::Population(const uint8_t n,
         _size(n),
         _generation(0),
         _topN(topN) {
-    _logger->info("Initializing RNG");
-    mRng.seed(std::chrono::system_clock::now().time_since_epoch().count());
-
     _logger->info("Making {} individuals from {}", n, seed);
     initializePopulation(seed);
 }
@@ -61,53 +54,35 @@ void Population::initializePopulation(const Individual& seed) {
 double Population::similarity(const Individual& individual) {
     double similarity = 0;
     for (const std::pair<AttributeName, Instruction>& i : individual.instructions()) {
-        Instruction instruction = i.second;
-        // TODO(grant) move this to the math lib
-        const double curVal = instruction.expression().current;
+        const Instruction instruction = i.second;
+        const Expression expression(instruction.expression());
         const double ideal = _audiencePreferences.at(instruction.name()).current;
-        similarity += 1 - (std::abs(ideal - curVal))
-                      / (instruction.expression().max - instruction.expression().min);
+        similarity += _math.similarity(ideal, expression.current, expression.min, expression.max);
     }
     return similarity;
 }
 
 void Population::sortPopulation() {
-    // wait here until we have new preferences
-    // or we've reached a timeout
-    // TOOD(grant) change timer to take updateable preference
-    bool haveLock = _havePreferences.try_lock_for(std::chrono::seconds(5));
     std::sort(_individuals.begin(), _individuals.end(), [this] (const Individual& lhs, const Individual& rhs) -> bool {
         return (similarity(lhs) / lhs.instructions().size()) > (similarity(rhs) / rhs.instructions().size());
     });
-    if (haveLock) {
-        _havePreferences.unlock();
-    }
 }
 
-std::pair<Individual, Individual> Population::getParents(Individuals fittest) {
-    std::uniform_int_distribution<int> choose(0, fittest.size() - 1);
-
-    int parent1Index = choose(mRng);
-    Individuals::iterator it = fittest.begin();
-    std::advance(it, parent1Index);
-    const Individual parent1 = *it;
-    // Don't use the same parent twice
-    int parent2Index;
-    do {
-        parent2Index = choose(mRng);
-    } while (parent2Index == parent1Index);
-    it = fittest.begin();
-    std::advance(it, parent2Index);
-    const Individual parent2 = *it;
-    return std::make_pair(parent1, parent2);
+std::pair<Individual, Individual> Population::getParents(const Individuals& fittest) {
+    std::pair<int, int> parents = _math.uniquePair(fittest);
+    return std::make_pair(fittest.at(parents.first), fittest.at(parents.second));
 }
 
-Individual Population::breed(std::pair<Individual, Individual> parents) {
+Individual Population::breed(const std::pair<Individual, Individual>& parents) {
     return Individual(_genetics.mutate(
         _genetics.combine(std::make_pair(parents.first.instructions(), parents.second.instructions()))));
 }
 
 void Population::nextGeneration() {
+    // wait here until we have new preferences
+    // or we've reached a timeout
+    // TOOD(grant) change timer to take updateable preference
+    bool haveLock = _havePreferences.try_lock_for(std::chrono::seconds(5));
     _generation = _generation + 1;
     // copy fittest to temporary
     Individuals fittest(_individuals.begin(), _individuals.begin() + _topN);
@@ -120,9 +95,12 @@ void Population::nextGeneration() {
     });
 
     sortPopulation();
+    if (haveLock) {
+        _havePreferences.unlock();
+    }
 }
 
-void Population::setPreferences(std::shared_ptr<moodycamel::BlockingConcurrentQueue<Preferences>> preferencesQueue) {
+void Population::setPreferences(const std::shared_ptr<moodycamel::BlockingConcurrentQueue<Preferences>>& preferencesQueue) {
     std::thread t([preferencesQueue, this] () {
         while (true) {
             _havePreferences.lock();

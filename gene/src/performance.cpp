@@ -111,12 +111,8 @@ void Performance::assembleMusicians() {
         throw std::runtime_error("Missing OSC config");
     }
 
-    std::cout << "Initializing OSC" << std::endl;
     musician.reset(new audiogene::OSC(oscPort, scAddr, scPort));
-    std::cout << "SC is ready" << std::endl;
-
-    // musician->send("/notify", "1");
-    // std::cout << "Sent notify"<<std::endl;
+    musician->send("/notify", "1");
 }
 
 std::future<void> Performance::play() {
@@ -141,7 +137,7 @@ std::future<void> Performance::play() {
         // Generate potential Conductors
         double mutationProbability;
         size_t populationSize;
-        uint8_t topN;
+        size_t topN;
         try {
             mutationProbability = _config["mutationProb"].as<double>();
             populationSize = _config["populationSize"].as<int>();
@@ -151,21 +147,22 @@ std::future<void> Performance::play() {
         }
         Individual seed(attributes);
         Population conductors(populationSize, seed, mutationProbability, topN);
-        //_logger->info("Initial population: {}", conductors);
+        _logger->info("Initial population: {}", conductors);
 
         // Connect audience to conductor population
         // The conductors should keep asking for the reaction of the audience
         conductors.setPreferences(preferencesQueue);
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
+        _logger->flush();
         // Make new generations
         uint8_t i = 0;
-        while (i <= 5) {
+        while (true) {
             std::cout << "loop " << +i++ << std::endl;
             _logger->info("Getting new generation");
             conductors.nextGeneration();
-            //_logger->info("New population: {}", conductors);
+            _logger->info("New population: {}", conductors);
             musician->setConductor(conductors.fittest());
+            _logger->flush();
         }
     });
 }

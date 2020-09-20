@@ -45,7 +45,7 @@ class Genetics::Impl {
     double normalDistribution(const Expression& expression) const noexcept;
 
     Instructions combine_randomZipper(const std::pair<Instructions, Instructions>& parents) const noexcept;
-    Expression mutateExpression(const Expression orig,
+    Expression mutateExpression(const Expression& orig,
                                 std::function<double(const Expression&)>&& distribution) const noexcept;
 
  public:
@@ -54,7 +54,7 @@ class Genetics::Impl {
 
     Instructions create(const Instructions& seed) const noexcept;
     Instructions combine(const std::pair<Instructions, Instructions>& parents) const noexcept;
-    Instructions mutate(const Instructions instructions) const noexcept;
+    Instructions mutate(const Instructions& instructions) const noexcept;
 };
 
 
@@ -78,7 +78,7 @@ Instructions Genetics::combine(const std::pair<Instructions, Instructions>& pare
     return Pimpl()->combine(parents);
 }
 
-Instructions Genetics::mutate(const Instructions instructions) const noexcept {
+Instructions Genetics::mutate(const Instructions& instructions) const noexcept {
     return Pimpl()->mutate(instructions);
 }
 
@@ -109,7 +109,7 @@ Instructions Genetics::Impl::combine(const std::pair<Instructions, Instructions>
     return combine_randomZipper(parents);
 }
 
-Instructions Genetics::Impl::mutate(const Instructions instructions) const noexcept {
+Instructions Genetics::Impl::mutate(const Instructions& instructions) const noexcept {
     Instructions newInstructions;
 
     for (const auto& kv : instructions) {
@@ -149,7 +149,7 @@ Instructions Genetics::Impl::combine_randomZipper(const std::pair<Instructions, 
     return childInstructions;
 }
 
-Expression Genetics::Impl::mutateExpression(const Expression orig,
+Expression Genetics::Impl::mutateExpression(const Expression& orig,
                                             std::function<double(const Expression&)>&& distribution) const noexcept {
     Expression mutatedExpression(orig);
     do {
