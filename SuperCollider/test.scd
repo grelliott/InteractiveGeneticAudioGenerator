@@ -1,3 +1,0 @@
-(
-s = Server.local;
-)
