@@ -60,14 +60,13 @@ class Audience {
         _preferencesQueue = preferencesQueue;
     }
 
+    void gatherPreferences() {
+        _preferencesQueue->enqueue(_preferences);
+    }
+
     void preferenceUpdated(const AttributeName& name, const Preference& preference) {
         try {
             _preferences.at(name) = preference;
-            // TODO(grant) Wait a while before adding preferences to the queue
-            // Maybe keep some counter and/or timer that sends new preferences after some have been updated
-            // or just after some amount of time?
-            _preferencesQueue->enqueue(_preferences);
-            std::this_thread::sleep_for(std::chrono::seconds(2));
         } catch (const std::out_of_range& e) {
             return;
         }
@@ -76,6 +75,7 @@ class Audience {
     void preferenceUpdated(const AttributeName& name, const int direction) {
         try {
             Preference p = _preferences.at(name);
+            // here might be a good place to add backoff logic for excessive input from the audience
             p.current = _math.clip(p.current + direction, p.min, p.max);
             preferenceUpdated(name, p);
         } catch (const std::out_of_range& e) {

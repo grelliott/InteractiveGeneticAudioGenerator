@@ -112,7 +112,7 @@ void Performance::assembleMusicians() {
     }
 
     musician.reset(new audiogene::OSC(oscPort, scAddr, scPort));
-    musician->send("/notify", "1");
+    // musician->send("/notify", "1");
 }
 
 std::future<void> Performance::play() {
@@ -154,9 +154,12 @@ std::future<void> Performance::play() {
         conductors.setPreferences(preferencesQueue);
 
         _logger->flush();
+
         // Make new generations
         uint8_t i = 0;
-        while (true) {
+        while (musician->requestConductor()) {
+            // Get the latest preferences from the audience
+            audience->gatherPreferences();
             std::cout << "loop " << +i++ << std::endl;
             _logger->info("Getting new generation");
             conductors.nextGeneration();

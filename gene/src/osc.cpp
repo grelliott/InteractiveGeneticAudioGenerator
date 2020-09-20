@@ -22,9 +22,9 @@
 
 #include "osc.hpp"
 
-#include <spdlog/spdlog.h>
 #include <lo/lo.h>
 #include <lo/lo_cpp.h>
+#include <spdlog/spdlog.h>
 
 #include <condition_variable>
 #include <future>
@@ -74,13 +74,15 @@ OSC::OSC(const std::string& clientPort, const std::string& serverIp, const std::
     _logger->info("OSC Initialized");
 }
 
-void OSC::requestConductor() {
+bool OSC::requestConductor() {
     std::unique_lock<std::mutex> l(_nextMutex);
+    // TODO(grant) make this timer modifyable
     if (_nextCV.wait_for(l, std::chrono::seconds(8)) != std::cv_status::timeout) {
         _logger->info("Didn't time out waiting for signal!");
     } else {
         _logger->info("Timed out waiting for signal!");
     }
+    return true;
 }
 
 void OSC::setConductor(const Individual& conductor) {

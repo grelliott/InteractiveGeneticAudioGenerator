@@ -25,7 +25,6 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
 
-//#include <algorithm>
 #include <memory>
 #include <mutex>
 #include <utility>
