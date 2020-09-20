@@ -8,7 +8,8 @@ Composed of two primary components: a microcontroller connected to multiple inte
 
 ### Raspberry Pi
 The following dependencies should be installed first
-`sudo apt-get install libgflags-dev libyaml-cpp-dev libspdlog-dev liblo-dev librtmidi-dev`
+**Note: This should be done on a Raspberry Pi**
+`sudo apt-get install libgflags-dev libyaml-cpp-dev libspdlog-dev liblo-dev librtmidi-dev wiringpi cmake`
 
 `cd gene`
 
