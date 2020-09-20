@@ -25,11 +25,7 @@
 #include <spdlog/spdlog.h>
 
 #include <cmath>
-#include <cstdint>
-#include <ctime>
-#include <iostream>
 #include <memory>
-#include <random>
 
 #include "math.hpp"
 
@@ -37,13 +33,12 @@ namespace audiogene {
 
 // Keep implementation header in source so it's not included
 class Genetics::Impl {
-    std::shared_ptr<spdlog::logger> _logger;
-    Math _math;
+    mutable std::shared_ptr<spdlog::logger> _logger;
+    const Math _math;
     const double _mutationProbability;
 
-    Instructions combine_randomZipper(const std::pair<Instructions, Instructions>& parents) const noexcept;
     Expression mutateExpression(const Expression& orig,
-                                std::function<double(const Expression&)>&& distribution) const noexcept;
+                                const std::function<double(const Expression&)>&& distribution) const noexcept;
 
  public:
     explicit Impl(const double mutationProbability);
@@ -92,7 +87,7 @@ Genetics::Impl::Impl(const double mutationProbability):
 Instructions Genetics::Impl::create(const Instructions& seed) const noexcept {
     Instructions newInstructions;
     for (const std::pair<AttributeName, Instruction>& i : seed) {
-        AttributeName name(i.first);
+        const AttributeName name(i.first);
         Expression newExpression(i.second.expression());
         if (newExpression.round) {
             newExpression.current = std::round(newExpression.current);
@@ -103,25 +98,35 @@ Instructions Genetics::Impl::create(const Instructions& seed) const noexcept {
 }
 
 Instructions Genetics::Impl::combine(const std::pair<Instructions, Instructions>& parents) const noexcept {
-    return combine_randomZipper(parents);
+    const Instructions parent1 = parents.first;
+    const Instructions parent2 = parents.second;
+    Instructions childInstructions;
+
+    for (const auto& kv : parent1) {
+        const AttributeName attributeName = kv.first;
+        if (_math.flipCoin()) {
+            childInstructions.emplace(attributeName, parent1.at(attributeName));
+        } else {
+            childInstructions.emplace(attributeName, parent2.at(attributeName));
+        }
+    }
+    return childInstructions;
 }
 
 Instructions Genetics::Impl::mutate(const Instructions& instructions) const noexcept {
     Instructions newInstructions;
 
     for (const auto& kv : instructions) {
-        AttributeName attributeName = kv.first;
-        Instruction instruction = kv.second;
+        const AttributeName attributeName = kv.first;
+        const Instruction instruction = kv.second;
 
         // Check if we should mutate or not
         if (_math.didEventOccur(_mutationProbability)) {
             // do the mutation thing
             Expression mutatedExpression(mutateExpression(instruction.expression(), [this] (const Expression& expression) {
-                // This is the distribution used to select a new expression
-                double current = expression.current;
-                double sd = _math.stddev(expression.min, expression.max);
-                return _math.normalDistribution(current, sd);
-                //return normalDistribution(expression);
+                // This is the mutation function
+                // It can be swapped with other mutation functions
+                return _math.normalDistribution(expression.current, _math.stddev(expression.min, expression.max));
             }));
 
             newInstructions.emplace(attributeName, Instruction(attributeName, mutatedExpression));
@@ -133,28 +138,13 @@ Instructions Genetics::Impl::mutate(const Instructions& instructions) const noex
     return newInstructions;
 }
 
-Instructions Genetics::Impl::combine_randomZipper(const std::pair<Instructions, Instructions>& parents) const noexcept {
-    Instructions parent1 = parents.first;
-    Instructions parent2 = parents.second;
-    Instructions childInstructions;
-
-    for (const auto& kv : parent1) {
-        AttributeName attributeName = kv.first;
-        if (_math.flipCoin()) {
-            childInstructions.emplace(attributeName, parent1.at(attributeName));
-        } else {
-            childInstructions.emplace(attributeName, parent2.at(attributeName));
-        }
-    }
-    return childInstructions;
-}
-
 Expression Genetics::Impl::mutateExpression(const Expression& orig,
-                                            std::function<double(const Expression&)>&& distribution) const noexcept {
+                                            const std::function<double(const Expression&)>&& distribution) const noexcept {
     Expression mutatedExpression(orig);
     do {
         mutatedExpression.current = distribution(orig);
-    } while (mutatedExpression.current < mutatedExpression.min || mutatedExpression.current > mutatedExpression.max);
+    } while (!_math.inRange(mutatedExpression.current, mutatedExpression.min, mutatedExpression.max));
+
     if (mutatedExpression.round) {
         mutatedExpression.current = std::round(mutatedExpression.current);
     }

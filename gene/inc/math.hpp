@@ -60,6 +60,14 @@ class Math {
         typename T,
         typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
     >
+    bool inRange(T current, T min, T max) const {
+        return (current >= min && current <= max);
+    }
+
+    template<
+        typename T,
+        typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
+    >
     T clip(T desired, T min, T max) const {
         if (desired < min) return min;
         if (desired > max) return max;
