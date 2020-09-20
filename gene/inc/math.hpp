@@ -29,16 +29,24 @@
 #include <vector>
 
 namespace audiogene {
-namespace math {
 
 class Math {
     mutable std::default_random_engine _rng;
 
  public:
-    Math();
+    Math() {
+        _rng.seed(std::chrono::system_clock::now().time_since_epoch().count());
+    }
 
-    bool flipCoin() const;
-    bool didEventOccur(const double probability) const;
+    bool flipCoin() const {
+        std::uniform_int_distribution<int> d(0, 1);
+        return d(_rng) == 0;
+    }
+
+    bool didEventOccur(const double probability) const {
+        std::uniform_real_distribution<double> d(0.0, 1.0);
+        return d(_rng) >= probability;
+    }
 
     template<
         typename T,
@@ -89,5 +97,4 @@ class Math {
     }
 };
 
-}  // namespace math
 }  // namespace audiogene

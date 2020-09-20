@@ -30,7 +30,7 @@
 #include <string>
 #include <utility>
 
-#include "math/math.hpp"
+#include "math.hpp"
 #include "preference.hpp"
 #include "blockingqueue.hpp"
 
@@ -44,7 +44,7 @@ class Audience {
  protected:
     Preferences _preferences;
     std::shared_ptr<moodycamel::BlockingConcurrentQueue<Preferences>> _preferencesQueue;
-    math::Math _math;
+    Math _math;
 
  public:
     virtual bool prepare() = 0;

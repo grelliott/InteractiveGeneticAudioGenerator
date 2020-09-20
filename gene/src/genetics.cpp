@@ -31,18 +31,15 @@
 #include <memory>
 #include <random>
 
-#include "math/math.hpp"
+#include "math.hpp"
 
 namespace audiogene {
 
 // Keep implementation header in source so it's not included
 class Genetics::Impl {
     std::shared_ptr<spdlog::logger> _logger;
-    math::Math _math;
+    Math _math;
     const double _mutationProbability;
-
-    // template??
-    double normalDistribution(const Expression& expression) const noexcept;
 
     Instructions combine_randomZipper(const std::pair<Instructions, Instructions>& parents) const noexcept;
     Expression mutateExpression(const Expression& orig,
@@ -121,7 +118,10 @@ Instructions Genetics::Impl::mutate(const Instructions& instructions) const noex
             // do the mutation thing
             Expression mutatedExpression(mutateExpression(instruction.expression(), [this] (const Expression& expression) {
                 // This is the distribution used to select a new expression
-                return normalDistribution(expression);
+                double current = expression.current;
+                double sd = _math.stddev(expression.min, expression.max);
+                return _math.normalDistribution(current, sd);
+                //return normalDistribution(expression);
             }));
 
             newInstructions.emplace(attributeName, Instruction(attributeName, mutatedExpression));
@@ -159,12 +159,6 @@ Expression Genetics::Impl::mutateExpression(const Expression& orig,
         mutatedExpression.current = std::round(mutatedExpression.current);
     }
     return mutatedExpression;
-}
-
-double Genetics::Impl::normalDistribution(const Expression& expression) const noexcept {
-    double current = expression.current;
-    double sd = _math.stddev(expression.min, expression.max);
-    return _math.normalDistribution(current, sd);
 }
 
 }  // namespace audiogene

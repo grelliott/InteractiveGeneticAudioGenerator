@@ -28,7 +28,7 @@
 #include <memory>
 #include <thread>
 
-#include "math/math.hpp"
+#include "math.hpp"
 
 namespace audiogene {
 

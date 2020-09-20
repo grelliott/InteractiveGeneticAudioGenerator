@@ -30,11 +30,11 @@
 #include <utility>
 #include <vector>
 
-#include "blockingqueue.hpp"
 #include "audience.hpp"
+#include "blockingqueue.hpp"
 #include "genetics.hpp"
 #include "individual.hpp"
-#include "math/math.hpp"
+#include "math.hpp"
 
 namespace audiogene {
 
@@ -42,7 +42,7 @@ using Individuals = std::vector<Individual>;
 
 class Population {
     mutable std::shared_ptr<spdlog::logger> _logger;
-    const math::Math _math;
+    const Math _math;
     const Genetics _genetics;
 
     const size_t _size;
