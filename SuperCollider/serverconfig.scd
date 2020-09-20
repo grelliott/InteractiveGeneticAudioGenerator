@@ -24,7 +24,7 @@ o.bindAddress = "0.0.0.0";
 
 s = Server.local;
 s.options = o;
-s.dumpOSC;
+// s.dumpOSC;
 
 
 /*
