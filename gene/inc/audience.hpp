@@ -23,6 +23,7 @@
 #pragma once
 
 #include <chrono>
+#include <iostream>
 #include <map>
 #include <memory>
 #include <queue>
@@ -41,7 +42,7 @@ using Attributes = std::map<AttributeName, Attribute>;
 /*! An interface that an input source must implement */
 class Audience {
  protected:
-    Preferences mPreferences;
+    Preferences _preferences;
     std::shared_ptr<moodycamel::BlockingConcurrentQueue<Preferences>> _preferencesQueue;
     math::Math _math;
 
@@ -50,25 +51,22 @@ class Audience {
 
     void initializePreferences(const Attributes& attributes) {
         for (const std::pair<AttributeName, Attribute>& p : attributes) {
-            mPreferences.emplace(p.first, p.second);
+            _preferences.emplace(p.first, p.second);
         }
-        _preferencesQueue->enqueue(mPreferences);
+        _preferencesQueue->enqueue(_preferences);
     }
 
     void writeToPreferences(const std::shared_ptr<moodycamel::BlockingConcurrentQueue<Preferences>>& preferencesQueue) {
         _preferencesQueue = preferencesQueue;
     }
 
-    /*
-    std::shared_ptr<moodycamel::BlockingConcurrentQueue<Preferences>> providePreferences() {
-        return _preferencesQueue;
-    }
-    */
     void preferenceUpdated(const AttributeName& name, const Preference& preference) {
         try {
-            mPreferences.at(name) = preference;
-            _preferencesQueue->enqueue(mPreferences);
-            // notify queue has item
+            _preferences.at(name) = preference;
+            // TODO(grant) Wait a while before adding preferences to the queue
+            // Maybe keep some counter and/or timer that sends new preferences after some have been updated
+            // or just after some amount of time?
+            _preferencesQueue->enqueue(_preferences);
             std::this_thread::sleep_for(std::chrono::seconds(2));
         } catch (const std::out_of_range& e) {
             return;
@@ -77,16 +75,12 @@ class Audience {
 
     void preferenceUpdated(const AttributeName& name, const int direction) {
         try {
-            Preference p = mPreferences.at(name);
+            Preference p = _preferences.at(name);
             p.current = _math.clip(p.current + direction, p.min, p.max);
             preferenceUpdated(name, p);
         } catch (const std::out_of_range& e) {
             return;
         }
-    }
-
-    Preferences preferences() {
-        return mPreferences;
     }
 };
 

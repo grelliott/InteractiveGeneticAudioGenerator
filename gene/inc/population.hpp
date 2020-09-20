@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <random>
 #include <memory>
+#include <mutex>
 
 #include "individual.hpp"
 #include "genetics.hpp"
@@ -42,6 +43,7 @@ using Individuals = std::vector<Individual>;
 
 class Population {
     std::shared_ptr<spdlog::logger> _logger;
+    //TODO finish moving to math
     mutable std::default_random_engine mRng;
     const Genetics _genetics;
 
@@ -53,6 +55,7 @@ class Population {
     // When it's time to create a new generation, get preferences from the audience
     // and sort individuals based on that
     mutable Preferences _audiencePreferences;
+    std::timed_mutex _havePreferences;
 
     void initializePopulation(const Individual& seed);
     void sortPopulation();

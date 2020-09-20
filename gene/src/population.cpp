@@ -28,6 +28,7 @@
 #include <cmath>
 #include <cstdint>
 #include <ctime>
+#include <future>
 #include <iostream>
 #include <memory>
 #include <random>
@@ -61,6 +62,7 @@ double Population::similarity(const Individual& individual) {
     double similarity = 0;
     for (const std::pair<AttributeName, Instruction>& i : individual.instructions()) {
         Instruction instruction = i.second;
+        // TODO(grant) move this to the math lib
         const double curVal = instruction.expression().current;
         const double ideal = _audiencePreferences.at(instruction.name()).current;
         similarity += 1 - (std::abs(ideal - curVal))
@@ -70,9 +72,16 @@ double Population::similarity(const Individual& individual) {
 }
 
 void Population::sortPopulation() {
+    // wait here until we have new preferences
+    // or we've reached a timeout
+    // TOOD(grant) change timer to take updateable preference
+    bool haveLock = _havePreferences.try_lock_for(std::chrono::seconds(5));
     std::sort(_individuals.begin(), _individuals.end(), [this] (const Individual& lhs, const Individual& rhs) -> bool {
         return (similarity(lhs) / lhs.instructions().size()) > (similarity(rhs) / rhs.instructions().size());
     });
+    if (haveLock) {
+        _havePreferences.unlock();
+    }
 }
 
 std::pair<Individual, Individual> Population::getParents(Individuals fittest) {
@@ -114,11 +123,11 @@ void Population::nextGeneration() {
 }
 
 void Population::setPreferences(std::shared_ptr<moodycamel::BlockingConcurrentQueue<Preferences>> preferencesQueue) {
-    // run a thread that waits on the preferencesQueue and updates
     std::thread t([preferencesQueue, this] () {
         while (true) {
+            _havePreferences.lock();
             preferencesQueue->wait_dequeue(_audiencePreferences);
-            // notify to get a new conductor
+            _havePreferences.unlock();
         }
     });
     t.detach();

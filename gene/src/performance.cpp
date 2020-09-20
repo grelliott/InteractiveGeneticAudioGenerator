@@ -151,11 +151,12 @@ std::future<void> Performance::play() {
         }
         Individual seed(attributes);
         Population conductors(populationSize, seed, mutationProbability, topN);
-        _logger->info("Initial population: {}", conductors);
+        //_logger->info("Initial population: {}", conductors);
 
         // Connect audience to conductor population
         // The conductors should keep asking for the reaction of the audience
         conductors.setPreferences(preferencesQueue);
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
         // Make new generations
         uint8_t i = 0;
@@ -163,9 +164,8 @@ std::future<void> Performance::play() {
             std::cout << "loop " << +i++ << std::endl;
             _logger->info("Getting new generation");
             conductors.nextGeneration();
-            _logger->info("New population: {}", conductors);
+            //_logger->info("New population: {}", conductors);
             musician->setConductor(conductors.fittest());
-            std::this_thread::sleep_for(std::chrono::seconds(2));
         }
     });
 }
