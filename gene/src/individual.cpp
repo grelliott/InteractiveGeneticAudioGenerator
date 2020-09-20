@@ -37,9 +37,7 @@ Individual::Individual(const std::map<std::string, std::map<std::string, std::st
         _id(s_id++) {
     std::remove_reference<decltype(instructions)>::type::const_iterator it;
     for (it = instructions.begin(); it != instructions.end(); ++it) {
-        const std::string name = it->first;
-        const std::map<std::string, std::string> expression = it->second;
-        _instructions.emplace(name, Instruction(name, Expression(expression)));
+        _instructions.emplace(it->first, Instruction(it->first, Expression(it->second)));
     }
 }
 
@@ -58,8 +56,6 @@ Instruction Individual::instruction(const std::string& name) const {
 }
 
 Instructions Individual::instructions() const noexcept {
-    // perhaps stream something?
-    // Either way, give instructions to musician
     return _instructions;
 }
 

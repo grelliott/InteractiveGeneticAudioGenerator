@@ -87,19 +87,21 @@ bool OSC::requestConductor() {
 
 void OSC::setConductor(const Individual& conductor) {
     _logger->info("Setting new conductor {}", conductor);
-    Instructions instructions = conductor.instructions();
+    const Instructions instructions = conductor.instructions();
     for (const auto& kv : instructions) {
-        AttributeName attributeName = kv.first;
-        Instruction instruction = kv.second;
-        // TODO(grant) Determine the type of data being sent
-        lo_send(scLangServer, std::string("/gene/"+attributeName).c_str(), "f", instruction.expression().current);
+        const AttributeName attributeName = kv.first;
+        const Instruction instruction = kv.second;
+        int r = lo_send(scLangServer, std::string("/gene/"+attributeName).c_str(), "f", instruction.expression().current);
+        if (r == -1) {
+            _logger->warn("Failed to send OSC message {}", attributeName);
+        }
     }
     _logger->info("New conductor set", conductor);
 }
 
 bool OSC::send(const std::string& path, const std::string& msg) {
-    lo_send(scLangServer, path.c_str(), "s", msg.c_str());
-    return true;
+    int r = lo_send(scLangServer, path.c_str(), "s", msg.c_str());
+    return r != -1;
 }
 
 }  // namespace audiogene
