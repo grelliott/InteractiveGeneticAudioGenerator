@@ -6,13 +6,13 @@ populationSize: 24
 keepFittest: 8
 mutationProb: 0.05
 genes:
-    "tempo":
-        min: 80
-        max: 185
-        current: 120
-        step: 5
-        round: false
-        activates: OverBar
+    #    "tempo":
+    #        min: 80
+    #        max: 185
+    #        current: 120
+    #        step: 5
+    #        round: false
+    #        activates: OverBar
     "scale":
         min: 1
         max: 12
@@ -50,9 +50,9 @@ input:
     type: midi
     name: "Oxygen 25"
     map:
-        "tempo":
-            down: 48
-            up: 49
+        #        "tempo":
+        #            down: 48
+        #            up: 49
         "energy":
             down: 48
             up: 49
