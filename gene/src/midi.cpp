@@ -33,37 +33,41 @@
 
 namespace audiogene {
 
+auto convertToMapPair(const std::map<AttributeName, std::map<std::string, std::string>>& mapping)
+        -> std::map<int, std::pair<AttributeName, int>> {
+    std::map<int, std::pair<AttributeName, int>> r;
+    for (const auto& p : mapping) {
+        const AttributeName attributeName = p.first;
+        const std::map<std::string, std::string> directionAndKey = p.second;
+        for (const auto& s : directionAndKey) {
+            const std::string direction = s.first;
+            const std::string midiKey = s.second;
+            r.emplace(std::stoi(midiKey), std::pair<AttributeName, int>(attributeName, (direction == "up" ? 1 : -1)));
+        }
+    }
+    return r;
+}
+
 MIDI::MIDI():
         MIDI("", {}) {
     // empty constructor
 }
 
-MIDI::MIDI(const std::string& name, const std::map<AttributeName, std::map<std::string, std::string>> mapping):
+MIDI::MIDI(const std::string& name, const std::map<AttributeName, std::map<std::string, std::string>>& mapping):
         _logger(spdlog::get("log")),
         _name(name),
+        _mapping(convertToMapPair(mapping)),
         midiin(new RtMidiIn()) {
-    // transform mapping
-    for (const std::pair<AttributeName, std::map<std::string, std::string>>& p : mapping) {
-        const AttributeName attributeName = p.first;
-        const std::map<std::string, std::string> directionAndKey = p.second;
-        for (const std::pair<std::string, std::string>& s : directionAndKey) {
-            const std::string direction = s.first;
-            std::string midiKey = s.second;
-            _mapping[std::stoi(midiKey)] = std::pair<AttributeName, int>(attributeName, (direction == "up" ? 1 : -1));
-        }
-    }
-
     _logger->info("MIDI client created for device {}", _name);
 }
 
-bool MIDI::prepare() {
+auto MIDI::prepare() -> bool {
     uint16_t nPorts = midiin->getPortCount();
     if (nPorts == 0) {
         _logger->error("No ports available!");
         return false;
-    } else {
-        _logger->info("{} ports available", nPorts);
     }
+    _logger->info("{} ports available", nPorts);
 
     if (!_name.empty()) {
         std::string portName;
@@ -99,11 +103,11 @@ bool MIDI::prepare() {
             // we only care about note-off
             // TODO(grant) add some sort of buffer/back-off so that rapid bursts of a single event
             // don't all get handled
-            if (message->at(0) == 0x80) {
+            if (message->at(0) == NOTE_OFF) {
                 unsigned char key = message->at(1);
                 that->_logger->debug("Note off for {}", key);
                 if (that->_mapping.count(key) > 0) {
-                    std::pair<AttributeName, int> attributeChange = that->_mapping[key];
+                    std::pair<AttributeName, int> attributeChange = that->_mapping.at(key);
                     that->_logger->info("Attribute {} changed {}", attributeChange.first, attributeChange.second);
                     that->preferenceUpdated(attributeChange.first, attributeChange.second);
                 }

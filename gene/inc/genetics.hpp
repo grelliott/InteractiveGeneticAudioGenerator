@@ -39,13 +39,13 @@ class Genetics {
     explicit Genetics(const double mutationProbability);
     ~Genetics();
 
-    Genetics(Genetics&& rhs) noexcept;
-    Genetics& operator=(Genetics&& rhs) noexcept;
+    Genetics(Genetics&& rhs) = delete;
+    Genetics& operator=(Genetics&& rhs) = delete;
 
-    Genetics(const Genetics& rhs);
-    Genetics& operator=(const Genetics& rhs);
+    Genetics(const Genetics& rhs) = delete;
+    Genetics& operator=(const Genetics& rhs) = delete;
 
-    Instructions create(const Instructions& seed) const noexcept;
+    static Instructions create(const Instructions& seed);
     Instructions combine(const std::pair<Instructions, Instructions>& parents) const noexcept;
     Instructions mutate(const Instructions& instructions) const noexcept;
 };

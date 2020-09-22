@@ -42,17 +42,17 @@ class Performance {
     YAML::Node _config;
 
     std::shared_ptr<audiogene::Audience> audience;
-    std::unique_ptr<audiogene::Musician> musician;
+    std::unique_ptr<Musician> musician;
 
     void seatAudience();
     void assembleMusicians();
 
  public:
-    explicit Performance(const YAML::Node config);
+    explicit Performance(const YAML::Node& config);
     Performance(const Performance&) = delete;
     Performance& operator=(Performance const&) = delete;
 
-    std::future<void> play();
+    auto play() -> std::future<void>;
 };
 
 }  // namespace audiogene

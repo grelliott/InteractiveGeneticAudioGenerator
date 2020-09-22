@@ -72,10 +72,10 @@ class Instruction {
     const AttributeName _name;
     const Expression _expression;
  public:
-    explicit Instruction(const AttributeName& name, const Expression& expression);
+    explicit Instruction(AttributeName name, const Expression& expression);
 
-    AttributeName name() const;
-    Expression expression() const;
+    auto name() const -> AttributeName;
+    auto expression() const -> Expression;
 
     template<typename OStream>
     friend OStream &operator<<(OStream &os, const Instruction &obj) {

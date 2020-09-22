@@ -26,9 +26,9 @@
 #include <yaml-cpp/yaml.h>
 
 #include <cstdlib>
-#include <iostream>
 #include <functional>
 #include <future>
+#include <iostream>
 #include <map>
 #include <memory>
 #include <stdexcept>
@@ -38,15 +38,15 @@
 
 #include "audience.hpp"
 #include "individual.hpp"
-#include "musician.hpp"
 #include "midi.hpp"
+#include "musician.hpp"
 #include "osc.hpp"
 #include "population.hpp"
 #include "spi.hpp"
 
 namespace audiogene {
 
-Performance::Performance(const YAML::Node config):
+Performance::Performance(const YAML::Node& config):
         _logger(spdlog::get("log")),
         _config(config) {
     seatAudience();
@@ -72,8 +72,8 @@ void Performance::seatAudience() {
 
     if (inputType == "midi") {
         _logger->info("Input type is MIDI");
-        const std::string inputName = (inputNode["name"]) ? inputNode["name"].as<std::string>() : "";
-        const KeyMap mapping = inputNode["map"] ? inputNode["map"].as<KeyMap>() : KeyMap();
+        const std::string inputName = (inputNode["name"] != nullptr) ? inputNode["name"].as<std::string>() : "";
+        const KeyMap mapping = (inputNode["map"] != nullptr) ? inputNode["map"].as<KeyMap>() : KeyMap();
         audienceSource = new audiogene::MIDI(inputName, mapping);
     } else if (inputType == "spi") {
         _logger->info("Input type is SPI");
@@ -111,11 +111,11 @@ void Performance::assembleMusicians() {
         throw std::runtime_error("Missing OSC config");
     }
 
-    musician.reset(new audiogene::OSC(oscPort, scAddr, scPort));
+    musician = std::make_unique<OSC>(oscPort, scAddr, scPort);
     // musician->send("/notify", "1");
 }
 
-std::future<void> Performance::play() {
+auto Performance::play() -> std::future<void> {
     return std::async(std::launch::async, [this] () {
         // The input is from an audience
         // So we want an audience to guide the presentation

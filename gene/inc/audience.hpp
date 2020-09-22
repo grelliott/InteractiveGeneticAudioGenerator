@@ -47,7 +47,8 @@ class Audience {
     Math _math;
 
  public:
-    virtual bool prepare() = 0;
+    virtual ~Audience() = default;
+    virtual auto prepare() -> bool = 0;
 
     void initializePreferences(const Attributes& attributes) {
         for (const std::pair<AttributeName, Attribute>& p : attributes) {

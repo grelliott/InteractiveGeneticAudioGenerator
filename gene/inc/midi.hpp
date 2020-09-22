@@ -34,20 +34,23 @@
 
 namespace audiogene {
 
+constexpr unsigned char NOTE_OFF = 0b10000000;
+constexpr unsigned char NOTE_ON = 0b10010000;
+
 class MIDI: public Audience {
     std::shared_ptr<spdlog::logger> _logger;
     const std::string& _name;
     // key => {attribute, direction}
-    std::map<int, std::pair<AttributeName, int>> _mapping;
+    const std::map<int, std::pair<AttributeName, int>> _mapping;
     std::unique_ptr<RtMidiIn> midiin;
 
  public:
     MIDI();
     // mapping is {"attribute": {"direction":"key"},...}
-    MIDI(const std::string& name, const std::map<AttributeName, std::map<std::string, std::string>> mapping);
-    ~MIDI() = default;
+    MIDI(const std::string& name, const std::map<AttributeName, std::map<std::string, std::string>>& mapping);
+    ~MIDI() final = default;
 
-    bool prepare() final;
+    auto prepare() -> bool final;
 };
 
 }  // namespace audiogene

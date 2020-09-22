@@ -46,14 +46,14 @@ Population::Population(const uint8_t n,
 }
 
 void Population::initializePopulation(const Individual& seed) {
-    std::generate_n(std::back_inserter(_individuals), _size, [this, &seed] () -> Individual {
-        return Individual(_genetics.create(seed.instructions()));
+    std::generate_n(std::back_inserter(_individuals), _size, [&seed] () -> Individual {
+        return Individual(Genetics::create(seed.instructions()));
     });
 }
 
-double Population::similarity(const Individual& individual) {
+auto Population::similarity(const Individual& individual) -> double {
     double similarity = 0;
-    for (const std::pair<AttributeName, Instruction>& i : individual.instructions()) {
+    for (const auto& i : individual.instructions()) {
         const Instruction instruction = i.second;
         const Expression expression(instruction.expression());
         const double ideal = _audiencePreferences.at(instruction.name()).current;
@@ -68,12 +68,12 @@ void Population::sortPopulation() {
     });
 }
 
-std::pair<Individual, Individual> Population::getParents(const Individuals& fittest) {
+auto Population::getParents(const Individuals& fittest) -> std::pair<Individual, Individual> {
     std::pair<int, int> parents = _math.uniquePair(fittest);
     return std::make_pair(fittest.at(parents.first), fittest.at(parents.second));
 }
 
-Individual Population::breed(const std::pair<Individual, Individual>& parents) {
+auto Population::breed(const std::pair<Individual, Individual>& parents) -> Individual {
     return Individual(_genetics.mutate(
         _genetics.combine(std::make_pair(parents.first.instructions(), parents.second.instructions()))));
 }
@@ -82,7 +82,7 @@ void Population::nextGeneration() {
     // wait here until we have new preferences
     // or we've reached a timeout
     // TOOD(grant) change timer to take updateable preference
-    bool haveLock = _havePreferences.try_lock_for(std::chrono::seconds(5));
+    bool haveLock = _havePreferences.try_lock_for(std::chrono::seconds(PREFERENCES_WAIT_FOR_S));
     _generation = _generation + 1;
     // copy fittest to temporary
     Individuals fittest(_individuals.begin(), _individuals.begin() + _topN);
@@ -111,7 +111,7 @@ void Population::setPreferences(const std::shared_ptr<moodycamel::BlockingConcur
     t.detach();
 }
 
-const Individual Population::fittest() {
+auto Population::fittest() -> Individual {
     return _individuals.front();
 }
 

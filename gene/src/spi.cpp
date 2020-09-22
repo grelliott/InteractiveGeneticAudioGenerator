@@ -32,40 +32,38 @@ SPI::SPI() {
     _logger = spdlog::get("log");
 }
 
-bool SPI::prepare() {
+auto SPI::prepare() -> bool {
     // Set up SPI
-    int spiFd = wiringPiSPISetup(0, 500000);
+    int spiFd = wiringPiSPISetup(SPI_CHANNEL, MAX_SPEED);
     if (spiFd == -1) {
         _logger->warn("Failed to connect to SPI");
         return false;
-    } else {
-        // make a new thread to listen to SPI
-        spiListenerThread = std::thread([this] () {
-            unsigned char buf[2];
-            memset(buf, 0, 2);
-            buf[0] = 0x80;
-            // TODO(grant) change to some broadcast mechanism
-            int stop = 0;
-            // main loop
-            while (stop == 0) {
-                buf[0] = 0x80;
-                wiringPiSPIDataRW(0, buf, 1);
-                if (buf[0] != 0) {
-                    unsigned char data = buf[0];
-                    // loop through bits to see which are set
-                    for (size_t i = 0; i < sizeof(data) * 8; i++) {
-                        if (data & 1 << i) {
-                            _logger->info("Received data from controller {}", i);
-                            // TODO(grant) actually determine which preference was updated and update
-                            preferenceUpdated("", {});
-                        }
+    }
+
+    // make a new thread to listen to SPI
+    spiListenerThread = std::thread([this] () {
+        std::array<unsigned char, 1> buf{ {SIGNAL} };
+        // TODO(grant) change to some broadcast mechanism
+        int stop = 0;
+        // main loop
+        while (stop == 0) {
+            buf[0] = SIGNAL;
+            wiringPiSPIDataRW(SPI_CHANNEL, buf.data(), 1);
+            if (buf.at(0) != 0) {
+                unsigned char data = buf.at(0);
+                // loop through bits to see which are set
+                for (size_t i = 0; i < sizeof(data) * BYTE_SIZE; i++) {
+                    if ((data & 1u << i) != 0) {
+                        _logger->info("Received data from controller {}", i);
+                        // TODO(grant) actually determine which preference was updated and update
+                        preferenceUpdated("", {});
                     }
                 }
-                sleep(1);
             }
-        });
-        return true;
-    }
+            sleep(1);
+        }
+    });
+    return true;
 }
 
 }  // namespace audiogene

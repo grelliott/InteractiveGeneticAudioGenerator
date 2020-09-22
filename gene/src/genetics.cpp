@@ -37,40 +37,34 @@ class Genetics::Impl {
     const Math _math;
     const double _mutationProbability;
 
-    Expression mutateExpression(const Expression& orig,
-                                const std::function<double(const Expression&)>&& distribution) const noexcept;
+    auto mutateExpression(const Expression& orig,
+            const std::function<double(const Expression&)>&& distribution) const noexcept -> Expression;
 
  public:
-    explicit Impl(const double mutationProbability);
+    explicit Impl(double mutationProbability);
+    Impl(const Impl&) = delete;
+    Impl(Impl&&) = delete;
+    auto operator=(const Impl&) -> Impl& = delete;
+    auto operator=(Impl&&) -> Impl& = delete;
     ~Impl() = default;
 
-    Instructions create(const Instructions& seed) const noexcept;
-    Instructions combine(const std::pair<Instructions, Instructions>& parents) const noexcept;
-    Instructions mutate(const Instructions& instructions) const noexcept;
-};
 
+    static auto create(const Instructions& seed) -> Instructions;
+    auto combine(const std::pair<Instructions, Instructions>& parents) const noexcept -> Instructions;
+    auto mutate(const Instructions& instructions) const noexcept -> Instructions;
+};
 
 Genetics::Genetics(const double mutationProbability): _impl(new Impl(mutationProbability)) {}
 Genetics::~Genetics() = default;
-Genetics::Genetics(Genetics&& rhs) noexcept = default;
-Genetics& Genetics::operator=(Genetics&& rhs) noexcept = default;
-Genetics::Genetics(const Genetics& rhs): _impl(new Impl(*rhs._impl)) {}
-Genetics& Genetics::operator=(const Genetics& rhs) {
-    if (this != &rhs) {
-        _impl.reset(new Impl(*rhs._impl));
-    }
-    return *this;
+
+auto Genetics::create(const Instructions& seed) -> Instructions {
+    return Impl::create(seed);
 }
 
-Instructions Genetics::create(const Instructions& seed) const noexcept {
-    return Pimpl()->create(seed);
-}
-
-Instructions Genetics::combine(const std::pair<Instructions, Instructions>& parents) const noexcept {
+auto Genetics::combine(const std::pair<Instructions, Instructions>& parents) const noexcept -> Instructions {
     return Pimpl()->combine(parents);
 }
-
-Instructions Genetics::mutate(const Instructions& instructions) const noexcept {
+auto Genetics::mutate(const Instructions& instructions) const noexcept -> Instructions {
     return Pimpl()->mutate(instructions);
 }
 
@@ -84,9 +78,9 @@ Genetics::Impl::Impl(const double mutationProbability):
     // Empty constructor
 }
 
-Instructions Genetics::Impl::create(const Instructions& seed) const noexcept {
+auto Genetics::Impl::create(const Instructions& seed) -> Instructions {
     Instructions newInstructions;
-    for (const std::pair<AttributeName, Instruction>& i : seed) {
+    for (const auto& i : seed) {
         const AttributeName name(i.first);
         Expression newExpression(i.second.expression());
         if (newExpression.round) {
@@ -97,7 +91,7 @@ Instructions Genetics::Impl::create(const Instructions& seed) const noexcept {
     return newInstructions;
 }
 
-Instructions Genetics::Impl::combine(const std::pair<Instructions, Instructions>& parents) const noexcept {
+auto Genetics::Impl::combine(const std::pair<Instructions, Instructions>& parents) const noexcept -> Instructions {
     const Instructions parent1 = parents.first;
     const Instructions parent2 = parents.second;
     Instructions childInstructions;
@@ -113,7 +107,7 @@ Instructions Genetics::Impl::combine(const std::pair<Instructions, Instructions>
     return childInstructions;
 }
 
-Instructions Genetics::Impl::mutate(const Instructions& instructions) const noexcept {
+auto Genetics::Impl::mutate(const Instructions& instructions) const noexcept -> Instructions {
     Instructions newInstructions;
 
     for (const auto& kv : instructions) {
@@ -138,8 +132,8 @@ Instructions Genetics::Impl::mutate(const Instructions& instructions) const noex
     return newInstructions;
 }
 
-Expression Genetics::Impl::mutateExpression(const Expression& orig,
-                                            const std::function<double(const Expression&)>&& distribution) const noexcept {
+auto Genetics::Impl::mutateExpression(const Expression& orig,
+        const std::function<double(const Expression&)>&& distribution) const noexcept -> Expression {
     Expression mutatedExpression(orig);
     do {
         mutatedExpression.current = distribution(orig);

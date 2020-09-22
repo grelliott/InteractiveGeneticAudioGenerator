@@ -38,6 +38,8 @@
 
 namespace audiogene {
 
+constexpr uint8_t PREFERENCES_WAIT_FOR_S = 5;
+
 using Individuals = std::vector<Individual>;
 
 class Population {
@@ -57,12 +59,12 @@ class Population {
 
     void initializePopulation(const Individual& seed);
     void sortPopulation();
-    double similarity(const Individual& indvidual);
+    auto similarity(const Individual& individual) -> double;
 
     // These are related to the genetics of a population
     // Maybe these should be in a different class
-    std::pair<Individual, Individual> getParents(const Individuals& fittest);
-    Individual breed(const std::pair<Individual, Individual>& parents);
+    auto getParents(const Individuals& fittest) -> std::pair<Individual, Individual>;
+    auto breed(const std::pair<Individual, Individual>& parents) -> Individual;
     void mutate(Individual child);
 
  public:
@@ -72,7 +74,7 @@ class Population {
 
     void setPreferences(const std::shared_ptr<moodycamel::BlockingConcurrentQueue<Preferences>>& preferencesQueue);
 
-    const Individual fittest();
+    auto fittest() -> Individual;
 
     void nextGeneration();
 

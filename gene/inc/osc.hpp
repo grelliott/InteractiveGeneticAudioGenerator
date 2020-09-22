@@ -38,6 +38,12 @@
 
 namespace audiogene {
 
+constexpr char DEFAULT_CLIENT_PORT[] = "57130";
+constexpr char DEFAULT_SERVER_ADDR[] = "localhost";
+constexpr char DEFAULT_SERVER_PORT[] = "57120";
+
+constexpr uint8_t REQUEST_WAIT_FOR_S = 8;
+
 class OSC: public Musician {
     std::shared_ptr<spdlog::logger> _logger;
     lo::ServerThread client;
@@ -50,9 +56,9 @@ class OSC: public Musician {
  public:
     OSC();
     OSC(const std::string& clientPort, const std::string& serverIp, const std::string& serverPort);
-    ~OSC() = default;
+    ~OSC() final = default;
 
-    bool requestConductor() final;
+    auto requestConductor() -> bool final;
     void setConductor(const Individual& conductor) final;
 };
 

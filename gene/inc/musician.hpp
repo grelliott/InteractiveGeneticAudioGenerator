@@ -28,7 +28,8 @@
 namespace audiogene {
 class Musician {
  public:
-    virtual bool requestConductor() = 0;
+    virtual ~Musician() = default;
+    virtual auto requestConductor() -> bool = 0;
     virtual void setConductor(const Individual& conductor) = 0;
 };
 

@@ -24,17 +24,17 @@
 
 namespace audiogene {
 
-Instruction::Instruction(const AttributeName& name, const Expression& expression) :
-        _name(name),
+Instruction::Instruction(AttributeName name, const Expression& expression) :
+        _name(std::move(name)),
         _expression(expression) {
     // Empty constructor
 }
 
-AttributeName Instruction::name() const {
+auto Instruction::name() const -> AttributeName {
     return _name;
 }
 
-Expression Instruction::expression() const {
+auto Instruction::expression() const -> Expression {
     return _expression;
 }
 

@@ -30,15 +30,20 @@
 
 namespace audiogene {
 
+constexpr unsigned char SIGNAL = 0b10000000;
+constexpr int SPI_CHANNEL = 0;
+constexpr int MAX_SPEED = 500000;
+constexpr int BYTE_SIZE = 8;
+
 class SPI: public Audience {
     std::shared_ptr<spdlog::logger> _logger;
     std::thread spiListenerThread;
 
  public:
     SPI();
-    ~SPI() = default;
+    ~SPI() final = default;
 
-    bool prepare() final;
+    auto prepare() -> bool final;
 };
 
 }  // namespace audiogene

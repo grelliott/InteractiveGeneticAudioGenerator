@@ -44,10 +44,10 @@ class Individual {
  public:
     /*! Create an individual from config values */
     explicit Individual(const std::map<std::string, std::map<std::string, std::string>>& instructions);
-    explicit Individual(const Instructions& instructions);
+    explicit Individual(Instructions instructions);
 
-    Instructions instructions() const noexcept;
-    Instruction instruction(const std::string& name) const;
+    auto instructions() const noexcept -> Instructions;
+    auto instruction(const std::string& name) const -> Instruction;
 
     template<typename OStream>
     friend OStream &operator<<(OStream &os, const Individual &obj) {

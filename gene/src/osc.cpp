@@ -33,7 +33,7 @@
 namespace audiogene {
 
 OSC::OSC():
-    OSC("57130", "localhost", "57110") {}
+    OSC(&DEFAULT_CLIENT_PORT[0], &DEFAULT_SERVER_ADDR[0], &DEFAULT_SERVER_PORT[0]) {}
 
 OSC::OSC(const std::string& clientPort, const std::string& serverIp, const std::string& serverPort):
         _logger(spdlog::get("log")),
@@ -57,10 +57,14 @@ OSC::OSC(const std::string& clientPort, const std::string& serverIp, const std::
             });
 
     client.add_method("/next", "s", [this] (lo_arg **argv, int len) {
-        (void)len;
-        _logger->info("Client Next: {}", argv[0]->s);
-        std::unique_lock<std::mutex> l(_nextMutex);
-        _nextCV.notify_all();
+        if (len > 0) {
+            lo_arg* arg = *argv;
+            _logger->info("Client Next: {}", arg->s);
+            std::unique_lock<std::mutex> l(_nextMutex);
+            _nextCV.notify_all();
+        } else {
+            _logger->warn("Unexpected empty /next message");
+        }
     });
 
     client.start();
@@ -69,15 +73,20 @@ OSC::OSC(const std::string& clientPort, const std::string& serverIp, const std::
     isReady.get();
 
     // Tell SuperCollider to start playing music
-    lo_send(scLangServer, "/notify", "i", 1);
-
-    _logger->info("OSC Initialized");
+    lo::Message m;
+    m.add_int32(1);
+    int r = scLangServer.send("notify", m);
+    if (r == -1) {
+        _logger->error("Failed to initialize OSC");
+    } else {
+        _logger->info("OSC Initialized");
+    }
 }
 
-bool OSC::requestConductor() {
+ auto OSC::requestConductor() -> bool {
     std::unique_lock<std::mutex> l(_nextMutex);
     // TODO(grant) make this timer modifyable
-    if (_nextCV.wait_for(l, std::chrono::seconds(8)) != std::cv_status::timeout) {
+    if (_nextCV.wait_for(l, std::chrono::seconds(REQUEST_WAIT_FOR_S)) != std::cv_status::timeout) {
         _logger->info("Didn't time out waiting for signal!");
     } else {
         _logger->info("Timed out waiting for signal!");
@@ -91,7 +100,9 @@ void OSC::setConductor(const Individual& conductor) {
     for (const auto& kv : instructions) {
         const AttributeName attributeName = kv.first;
         const Instruction instruction = kv.second;
-        int r = lo_send(scLangServer, std::string("/gene/"+attributeName).c_str(), "f", instruction.expression().current);
+        lo::Message m;
+        m.add_double(instruction.expression().current);
+        int r = scLangServer.send(std::string("/gene/"+attributeName).c_str(), m);
         if (r == -1) {
             _logger->warn("Failed to send OSC message {}", attributeName);
         }
@@ -99,9 +110,10 @@ void OSC::setConductor(const Individual& conductor) {
     _logger->info("New conductor set", conductor);
 }
 
-bool OSC::send(const std::string& path, const std::string& msg) {
-    int r = lo_send(scLangServer, path.c_str(), "s", msg.c_str());
-    return r != -1;
+auto OSC::send(const std::string& path, const std::string& msg) -> bool {
+    lo::Message m;
+    m.add_string(msg);
+    return scLangServer.send(path, m) != -1;
 }
 
 }  // namespace audiogene

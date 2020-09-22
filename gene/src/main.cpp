@@ -30,10 +30,10 @@
 #include "performance.hpp"
 
 // Command line argument flags
-DEFINE_string(config, "", "Configuration for the genetics");
-DEFINE_string(log, "out.log", "Logfile path");
+DEFINE_string(config, "", "Configuration for the genetics");  // NOLINT
+DEFINE_string(log, "out.log", "Logfile path");  // NOLINT
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) {  // NOLINT
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
     try {

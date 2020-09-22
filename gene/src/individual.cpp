@@ -24,8 +24,8 @@
 
 #include <spdlog/spdlog.h>
 
-#include <iostream>
 #include <cassert>
+#include <iostream>
 #include <map>
 #include <string>
 
@@ -33,21 +33,28 @@ namespace audiogene {
 
 uint32_t Individual::s_id = 0;
 
-Individual::Individual(const std::map<std::string, std::map<std::string, std::string>>& instructions):
-        _id(s_id++) {
+auto convertMapToInstructions(const std::map<std::string, std::map<std::string, std::string>>& instructions) -> Instructions {
+    Instructions r;
     std::remove_reference<decltype(instructions)>::type::const_iterator it;
     for (it = instructions.begin(); it != instructions.end(); ++it) {
-        _instructions.emplace(it->first, Instruction(it->first, Expression(it->second)));
+        r.emplace(it->first, Instruction(it->first, Expression(it->second)));
     }
+    return r;
 }
 
-Individual::Individual(const Instructions& instructions):
+Individual::Individual(const std::map<std::string, std::map<std::string, std::string>>& instructions):
         _id(s_id++),
-        _instructions(instructions) {
+        _instructions(convertMapToInstructions(instructions)) {
     // empty constructor
 }
 
-Instruction Individual::instruction(const std::string& name) const {
+Individual::Individual(Instructions instructions):
+        _id(s_id++),
+        _instructions(std::move(instructions)) {
+    // empty constructor
+}
+
+auto Individual::instruction(const std::string& name) const -> Instruction {
     try {
         return _instructions.at(name);
     } catch (const std::out_of_range& e) {
@@ -55,7 +62,7 @@ Instruction Individual::instruction(const std::string& name) const {
     }
 }
 
-Instructions Individual::instructions() const noexcept {
+auto Individual::instructions() const noexcept -> Instructions {
     return _instructions;
 }
 

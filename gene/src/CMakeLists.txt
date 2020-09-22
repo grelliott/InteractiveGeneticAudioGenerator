@@ -1,6 +1,8 @@
 set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_COMPILER "/usr/local/clang_9.0.0/bin/clang++")
+set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-checks=*,-fuchsia-default-arguments-calls,-fuchsia-trailing-return")
 add_executable(audiogene osc.cpp spi.cpp midi.cpp instruction.cpp individual.cpp genetics.cpp population.cpp performance.cpp main.cpp)
-target_compile_options(audiogene PUBLIC -Wall -Wextra -Wpedantic -Werror -Wno-psabi)
+target_compile_options(audiogene PUBLIC -Wall -Wextra -Wpedantic -Werror)
 find_package(gflags REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_library(lo REQUIRED)  #OSC
