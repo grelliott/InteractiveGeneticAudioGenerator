@@ -78,6 +78,7 @@ Genetics::Impl::Impl(const double mutationProbability):
     // Empty constructor
 }
 
+// TODO Create individuals using an open-ended normal distribution with the median at the middle of the min/max
 auto Genetics::Impl::create(const Instructions& seed) -> Instructions {
     Instructions newInstructions;
     for (const auto& i : seed) {
