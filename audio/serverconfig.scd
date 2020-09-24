@@ -3,7 +3,7 @@
 "Restarting server".postln;
 s.quit;
 
-~basePath = "/home/pi/audiogene/SuperCollider/";
+~basePath = "/home/pi/audiogene/audio/";
 
 // Server config
 o = ServerOptions.new;
@@ -406,7 +406,7 @@ s.options = o;
 // Create some sequences to work with
 ~makeSequences = {
     ~sequences = Dictionary.new;
-    ~sequences[\thelick] = Pseq(#[62,64,65,67,64,Rest(1),60,62], inf);
+//    ~sequences[\thelick] = Pseq(#[62,64,65,67,64,Rest(1),60,62], inf);
     // Maybe break up sequences into timing and notes
     // need to test out instruments with different sequences to create them
 };

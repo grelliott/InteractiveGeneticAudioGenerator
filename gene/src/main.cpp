@@ -52,7 +52,10 @@ int main(int argc, char* argv[]) {  // NOLINT
 
         logger->info("Loading config file {}", FLAGS_config);
         YAML::Node config = YAML::LoadFile(FLAGS_config);
-        logger->info("Config loaded: {}", config["name"]);
+        if (!config) {
+            std::cerr << "Failed to load config file!" << std::endl;
+            return -1;
+        }
 
         audiogene::Performance performance(config);
         std::future<void> presentation = performance.play();

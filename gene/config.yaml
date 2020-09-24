@@ -6,38 +6,24 @@ populationSize: 24
 keepFittest: 8
 mutationProb: 0.05
 genes:
-    #    "tempo":
-    #        min: 80
-    #        max: 185
-    #        current: 120
-    #        step: 5
-    #        round: false
-    #        activates: OverBar
-    "scale":
-        min: 1
-        max: 12
-        current: 3
-        step: 1
-        round: true
-        activates: OnBar
     "energy":
         min: 1
         max: 12
         current: 6
         ste: 1
-        round: true
+        round: false
         activates: OnBar
     "vibe":
         min: 1
         max: 12
         current: 6
-        round: true
+        round: false
         activates: OnBar
     "theme":
         min: 1
         max: 12
         current: 6
-        round: true
+        round: false
         activates: OnBar
 
 # Configure interfaces
@@ -50,16 +36,13 @@ input:
     type: midi
     name: "Oxygen 25"
     map:
-        #        "tempo":
-        #            down: 48
-        #            up: 49
         "energy":
-            down: 48
-            up: 49
+            down: 24
+            up: 26
         "vibe":
-            down: 50
-            up: 51
+            down: 28
+            up: 29
         "theme":
-            down: 50
-            up: 51
+            down: 31
+            up: 33
 
