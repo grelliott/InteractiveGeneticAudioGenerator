@@ -25,10 +25,10 @@ s.options = o;
 /*
  * Set up parameters for volume, EQ, limiter
  */
-~gain = 0.0;  // in dB
-~lpCutoff = 8000;
-~hpCutoff = 60;
-~limiterAmp = 0.8;
+~gain = 6.0;  // in dB
+~lpCutoff = 18000;
+~hpCutoff = 40;
+~limiterAmp = 1.0;
 ~limiterDur = 0.02;
 ~tempo = 120;
 ~tempoMin = 60;
@@ -428,6 +428,7 @@ ServerTree.add(~setupSubscription);
 ServerTree.add(~setupOSC);
 // ServerTree.add(~setupMIDI);
 
+ServerBoot.add(~makeSynths);
 ServerBoot.add(~loadBuffers);
 ServerBoot.add(~loadSynths);
 ServerBoot.add(~loadFx);
@@ -468,13 +469,16 @@ s.waitForBoot({
 });
 
 s.doWhenBooted({
-	~setTempo.value(~tempo);
+    var b = Buffer.read(s, "buffers/thx_eclipse.wav");
 
+	~setTempo.value(~tempo);
 	~setGain.value(~gain);
 	~setCutoff.value(~hpCutoff, ~lpCutoff);
 	~setLimiter.value(~limiterAmp, ~limiterDur);
 	// ~osc.sendMsg('/done', "awake");
+    s.sync;
 	"done".postln;
+    Synth(\playSample2, [\out, ~masterout, \sample, b.bufnum]);
 	~mainGroup.set(\gate, 1);
 });
 
