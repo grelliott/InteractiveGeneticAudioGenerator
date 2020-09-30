@@ -22,6 +22,8 @@ o.maxLogins = 4;
 s = Server.local;
 s.options = o;
 
+//s.dumpOSC();
+
 /*
  * Set up parameters for volume, EQ, limiter
  */
@@ -204,7 +206,6 @@ s.options = o;
 
 // Set up the OSC messages we listen for
 ~setupOSC = {
-//	~osc = NetAddr.new(~oscAddress, ~oscPort);
 
 /*
     OSCdef.new(\notifyOSC, {
@@ -222,6 +223,16 @@ s.options = o;
     '\notify'
     );
 */
+
+    OSCdef.new(\connectedOSC, { |msg, time, addr, port|
+        Synth(\playSample2, [\out, ~masterout, \sample, ~getBuffer.value("control", "connected")]);
+        ~t.schedAbs(64, {
+            addr.sendMsg("/request", "s");
+            64;
+        });
+    },
+    '/connected',
+    );
 
     OSCdef.new(\tempoOSC, { |msg, time, addr, port|
         ~setTempo.value(msg[1]);
@@ -261,6 +272,7 @@ s.options = o;
 
 	OSCdef.new(\subscriberOSC, { |msg, time, addr, port|
 		var receiverAddr = NetAddr.new(addr.ip, msg[1]);
+        //TODO mayyyybe just addr?
 		~addSubscriber.value(receiverAddr);
 	},
 	'/subscribe'
@@ -338,12 +350,11 @@ s.options = o;
         ~b = Dictionary.new;
         PathName(bufferPath).entries.do { | subfolder |
             ~b.put(subfolder.folderName.asSymbol, Dictionary.new);
-            subfolder.folderName.postln;
             subfolder.entries.do { |file|
-               ~b[subfolder.folderName.asSymbol].put(file.fileNameWithoutExtension.asSymbol, Buffer.read(s, file));
+               ~b[subfolder.folderName.asSymbol].put(file.fileNameWithoutExtension.asSymbol, Buffer.read(s, file.fullPath));
             };
         };
-    };
+    }.value;
     ~getBuffer = { |folder, file|
         ~b.at(folder.asSymbol).at(file.asSymbol);
     };
@@ -405,8 +416,23 @@ s.options = o;
 
 // Create some sequences to work with
 ~makeSequences = {
+    // Make a bunch of Pbind-style objects that can be used to describe how an instrument should be played
+    // should describe the notes being played, the order of the notes, and the duration of the notes (relative to global tempo and scale)
     ~sequences = Dictionary.new;
-//    ~sequences[\thelick] = Pseq(#[62,64,65,67,64,Rest(1),60,62], inf);
+    // totally random
+    ~sequences[\random] = Dictionary.new;
+    // A bit of form, but mostly random. May come back to repeat a phrase
+    ~sequences[\chaotic] = Dictionary.new;
+    // inspired by jazz
+    ~sequences[\improvised] = Dictionary.new;
+//    ~sequences[\improvised][\thelick] = Pseq(#[62,64,65,67,64,Rest(1),60,62], inf);
+    // polyrhythimc composition
+    ~sequences[\poly] = Dictionary.new;
+    // nearly on-beat, but with some swing, or off-beat phrases
+    ~sequences[\synchopated] = Dictionary.new;
+    // straight-up 4/4
+    ~sequences[\beats] = Dictionary.new;
+
     // Maybe break up sequences into timing and notes
     // need to test out instruments with different sequences to create them
 };
@@ -428,12 +454,12 @@ ServerTree.add(~setupSubscription);
 ServerTree.add(~setupOSC);
 // ServerTree.add(~setupMIDI);
 
-ServerBoot.add(~makeSynths);
 ServerBoot.add(~loadBuffers);
 ServerBoot.add(~loadSynths);
 ServerBoot.add(~loadFx);
+ServerBoot.add(~makeSynths);
 
-//ServerBoot.add(~makeSequences);
+ServerBoot.add(~makeSequences);
 //ServerBoot.add(~makeEvents);
 
 ServerQuit.add(~cleanup);
@@ -469,8 +495,6 @@ s.waitForBoot({
 });
 
 s.doWhenBooted({
-    var b = Buffer.read(s, "buffers/thx_eclipse.wav");
-
 	~setTempo.value(~tempo);
 	~setGain.value(~gain);
 	~setCutoff.value(~hpCutoff, ~lpCutoff);
@@ -478,8 +502,11 @@ s.doWhenBooted({
 	// ~osc.sendMsg('/done', "awake");
     s.sync;
 	"done".postln;
-    Synth(\playSample2, [\out, ~masterout, \sample, b.bufnum]);
+
+    Synth(\playSample2, [\out, ~masterout, \sample, ~getBuffer.value("control", "startup")]);
 	~mainGroup.set(\gate, 1);
+    // maybe loop here and every 64 bars or something, send a request for new instructions
+    // might stick this up in OSC...?
 });
 
 )

@@ -56,15 +56,10 @@ OSC::OSC(const std::string& clientPort, const std::string& serverIp, const std::
                 _logger->info("OSC client finished");
             });
 
-    client.add_method("/next", "s", [this] (lo_arg **argv, int len) {
-        if (len > 0) {
-            lo_arg* arg = *argv;
-            _logger->info("Client Next: {}", arg->s);
-            std::unique_lock<std::mutex> l(_nextMutex);
-            _nextCV.notify_all();
-        } else {
-            _logger->warn("Unexpected empty /next message");
-        }
+    client.add_method("/request", "s", [this] (lo_arg **argv, int len) {
+        _logger->info("Request for new conductor");
+        std::unique_lock<std::mutex> l(_nextMutex);
+        _nextCV.notify_all();
     });
 
     client.start();
@@ -73,9 +68,8 @@ OSC::OSC(const std::string& clientPort, const std::string& serverIp, const std::
     isReady.get();
 
     // Tell SuperCollider to start playing music
-    lo::Message m;
-    m.add_int32(1);
-    int r = scLangServer.send("notify", m);
+    int r = scLangServer.send("/connected");
+
     if (r == -1) {
         _logger->error("Failed to initialize OSC");
     } else {

@@ -1,5 +1,10 @@
 #! /bin/bash
 
+# include script for tuning performance
+# do during startup
+# start jackd (do this at startup)
+/usr/local/bin/jackd -R -P90 -dalsa -dhw:sndrpihifiberry -r48000 -Phw:sndrpihifiberry,0 -o2 -i0 -p128 &
+
 BASE_PATH=$PWD
 AUDIOGENE_PATH=$BASE_PATH/gene
 AUDIOGENE_INSTALL_PATH=$AUDIOGENE_PATH/_install
@@ -10,20 +15,18 @@ SUPERCOLLIDER_PATH=$BASE_PATH/audio
 SUPERCOLLIDER_SCRIPT=$SUPERCOLLIDER_PATH/serverconfig.scd
 SCLANG=sclang
 
+LOGPATH=/var/log/audiogene
+
 export DISPLAY=:0
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 
-# start jackd
-/usr/local/bin/jackd -ndefault -P75 -p64 -dalsa -dhw:sndrpihifiberry -r48000 -n2 -D -Phw:sndrpihifiberry,0 -i2 &
-
 # start SuperCollider
-echo " " | $SCLANG -D $SUPERCOLLIDER_SCRIPT & echo $! > /tmp/sclang.pid
-#echo " " | sclang -D $SUPERCOLLIDER_PATH/test.scd& echo $! > /tmp/sclang.pid
+#echo " " | $SCLANG -D $SUPERCOLLIDER_SCRIPT & echo $! > /tmp/sclang.pid
+
+$SCLANG -D $SUPERCOLLIDER_SCRIPT >$LOGPATH/sclang-${BASHPID}.log 2>&1 &
 
 sleep 10
 
 # start audiogen
-$AUDIOGENE --config $AUDIOGENE_CONFIG_FILE
+$AUDIOGENE --config $AUDIOGENE_CONFIG_FILE --log $LOGPATH/audiogene-${BASHPID}.log &
 
-killall sclang
-killall scsynth

@@ -42,7 +42,8 @@ constexpr char DEFAULT_CLIENT_PORT[] = "57130";
 constexpr char DEFAULT_SERVER_ADDR[] = "localhost";
 constexpr char DEFAULT_SERVER_PORT[] = "57120";
 
-constexpr uint8_t REQUEST_WAIT_FOR_S = 8;
+//TODO make a config value
+constexpr uint8_t REQUEST_WAIT_FOR_S = 120;
 
 class OSC: public Musician {
     std::shared_ptr<spdlog::logger> _logger;
