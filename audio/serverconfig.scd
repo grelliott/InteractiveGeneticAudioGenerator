@@ -25,17 +25,20 @@ s.options = o;
 //s.dumpOSC();
 
 /*
- * Set up parameters for volume, EQ, limiter
+ * Set up configurable parameters
  */
 ~gain = 6.0;  // in dB
+~maxGain = 6.0;
 ~lpCutoff = 18000;
-~hpCutoff = 40;
+~hpCutoff = 80;
 ~limiterAmp = 1.0;
 ~limiterDur = 0.02;
 ~tempo = 120;
 ~tempoMin = 60;
 ~tempoMax = 180;
+~beatsBetweenRequests = 64;
 
+~t = TempoClock.default;
 
 // Set up scales from 0 - 12
 // 0 being most moody, 12 being most joyous
@@ -92,32 +95,9 @@ s.options = o;
 	~bus.add(\limiterDurBus -> Bus.control(s));
 
     // Set up busses for controlling behaviour of audio and synths
-
-    // rythymBus carries a signal that indicates
-    // how much rythym should be in the piece (arhythmic to 4/4 to polyrhythm...?)
     ~bus.add(\rhythmBus -> Bus.control(s));
-
-    // Energy bus may control the kind of energy the piece has
-    // Perhaps going from a calm relaxed energy
-    // to an upbeat energetic feeling
-    // May not need tempo OSC for this
-    // Lower energy may be low tempo, maybe less instruments, more open arrangments, less structured rythm
-    // higher energy may be higher tempo, more instruments, more structured rythm
-   ~bus.add(\energyBus -> Bus.control(s));
-
-    // vibeBus (name tbd) could toggle things like
-    // scale, or sample selection
-    // Perhaps moving from a dark moody vibe to a upbeat happy vibe
-    // A dark moody vibe may use a range of scales such as Aeolian, harmonic minor, melodic minor, locrian
-    // upbeat may use scales such as major, mixolydian, lydian, phrygian, harmonic major, dorian (may be on border)
-    // Dark may use drawn out simple chords
-    // upbeat may use snappier chords, maybe a bit more complex or at least arranged to feel happy
+    ~bus.add(\energyBus -> Bus.control(s));
     ~bus.add(\vibeBus -> Bus.control(s));
-
-    // Theme bus may change from a natural organic theme to a digital techy theme
-    // organic theme may contain field-recordings played out very close to reality
-    //   perhaps nature-based instruments (sticks, wooden pipes, etc)
-    // digital theme may contain synths, perhaps with heavy effects
     ~bus.add(\themeBus -> Bus.control(s));
 };
 
@@ -134,21 +114,13 @@ s.options = o;
 
 // Set up the functions that will control the behaviour of the system
 ~addRoutines = {
-    ~t = TempoClock.default;
-    ~setTempo = { |bpm|
-        ~tempo = bpm;
-        // Schedule tempo change to next bar
-        ~t.schedAbs(~t.nextBar, {
-            "Setting BPM to ".post;
-            ~tempo.postln;
-            ~t.tempo = ~tempo / 60.0;
-        });
-    };
-
     ~setGain = { |db|
-        if( db > 6, {
+        if( db > ~maxGain, {
             db.post;
-            "db is greater than the max 6db".postln;
+            "db is greater than the max ".post;
+            ~maxGain.post;
+            "db".postln;
+            db = ~maxGain;
             nil;
         },
         {
@@ -175,12 +147,39 @@ s.options = o;
 		~bus[\limiterDurBus].set(~limiterDur);
 	};
 
-    ~setScale = { |scale|
-        "Setting scale to ".post;
-        ~scales.clipAt(scale).name.postln;
-        ~scale = ~scales.clipAt(scale);
+    ~setTempo = { |bpm|
+        ~tempo = bpm;
+        // Schedule tempo change to next bar
+        ~t.schedAbs(~t.nextBar, {
+            "Setting BPM to ".post;
+            ~tempo.postln;
+            ~t.tempo = ~tempo / 60.0;
+        });
     };
 
+    ~setScale = { |scale|
+        ~t.schedAbs(~t.nextBar, {
+            "Setting scale to ".post;
+            ~scales.clipAt(scale).name.postln;
+            ~scale = ~scales.clipAt(scale);
+        });
+    };
+
+    // rythymBus carries a signal that indicates
+    // how much rythym should be in the piece (arhythmic to 4/4 to polyrhythm...?)
+    // Expect value from 0-6
+    ~setRythm = { |rhythm|
+        "Setting rhythm to ".post;
+        rhythm.postln;
+        // perhaps the bus can be used to select the pdefs/pseqs
+        ~bus[\rhythmBus].set(rhythm);
+    };
+
+    // Energy bus may control the kind of energy the piece has
+    // Perhaps going from a calm relaxed energy
+    // to an upbeat energetic feeling
+    // Lower energy may be low tempo, maybe less instruments, more open arrangments, less structured rythm
+    // higher energy may be higher tempo, more instruments, more structured rythm
     ~setEnergy = { |energy|
         "Setting energy to ".post;
         energy.postln;
@@ -188,20 +187,61 @@ s.options = o;
         // Assume it falls between 0-255
         // and tempo falls between tempoMin and tempoMax
         ~setTempo.value(energy.linlin(0, 255, ~tempoMin, ~tempoMax));
+        // input to set rhythm
+        // for now only use energy to set rhythm
+        ~setRhythm.value(energy.linlin(0, 255, 0, 6).round);
         ~bus[\energyBus].set(energy);
     };
 
+    // vibeBus (name tbd) could toggle things like
+    // scale, or sample selection
+    // Perhaps moving from a dark moody vibe to a upbeat happy vibe
+    // A dark moody vibe may use a range of scales such as Aeolian, harmonic minor, melodic minor, locrian
+    // upbeat may use scales such as major, mixolydian, lydian, phrygian, harmonic major, dorian (may be on border)
+    // Dark may use drawn out simple chords
+    // upbeat may use snappier chords, maybe a bit more complex or at least arranged to feel happy
     ~setVibe = { |vibe|
         "Setting vibe to ".post;
         vibe.postln;
+        // for now set scale only from vibe
+        //TODO add a function to take inputs from multiple sources to determine scale
+        ~setScale.value(vibe.round);
+        // a dark moody vibe may use minimal drones, thick reverb, maybe some compression?
+        // a dark moody vibe may shift octaves of certain instruments down
+        // a dark moody vibe may increase the duration of notes
+        // moodier vibe may use more stretched out samples
         ~bus[\vibeBus].set(vibe);
     };
 
+    // Theme bus may change from a natural organic theme to a digital techy theme
+    // organic theme may contain field-recordings played out very close to reality
+    //   perhaps nature-based instruments (sticks, wooden pipes, etc)
+    // digital theme may contain synths, perhaps with heavy effects
+    // in-between maybe something closer to instruments?
     ~setTheme = { |theme|
         "Setting theme to ".post;
         theme.postln;
+        // select instruments
+        // organic to digital
+        //TODO determine which instruments/groups should be active
+        //0, 1, 2, 3, 4, 5, 6
+        // let's just start with adding one and go from there
+        //TODO pick instrument at random from grouping
+        // pick degree/dur randomly based on vibe/energy bus values
+        ~loadInstrument.value(\padsPbind, \voice, ~padsGroup, \amp, 1, \degree, Pseq([1,2,3,4,5,6,7], inf), \dur, Prand([4, 2, 1/4], inf));
+        ~padsGroup.set(\gate, 1);
         ~bus[\themeBus].set(theme);
     };
+};
+
+~loadInstrument = { |pbind, name, group ... synthArgs|
+    // perhaps eventually unload non-playing synthdefs? Not sure if I'll need to manage memory like that
+    // would use the directory to find and load synth. For now, just use the name-as-symbol to create a synth
+    // actually set up a pbindef with a gate
+    // or, rather...perhaps just swaps the instrument of an existing pbindef
+    if (Pbindef(pbind).get(\instrument) == name, nil, {
+        Pbindef(pbind, \instrument, name, \out, ~masterout, \group, group, * synthArgs).play;
+    });
 };
 
 // Set up the OSC messages we listen for
@@ -226,10 +266,11 @@ s.options = o;
 
     OSCdef.new(\connectedOSC, { |msg, time, addr, port|
         Synth(\playSample2, [\out, ~masterout, \sample, ~getBuffer.value("control", "connected")]);
-        ~t.schedAbs(64, {
+        ~t.schedAbs(4, {
             addr.sendMsg("/request", "s");
-            64;
+            ~beatsBetweenRequests;
         });
+        ~mainGroup.set(\gate, 1);
     },
     '/connected',
     );
@@ -415,6 +456,8 @@ s.options = o;
 };
 
 // Create some sequences to work with
+// Will need to figure out how to create some melody/harmony between the playing instruments
+//
 ~makeSequences = {
     // Make a bunch of Pbind-style objects that can be used to describe how an instrument should be played
     // should describe the notes being played, the order of the notes, and the duration of the notes (relative to global tempo and scale)
@@ -437,6 +480,10 @@ s.options = o;
     // need to test out instruments with different sequences to create them
 };
 
+~makePbinds = {
+    Pbindef.new(\padsPbind, \instrument, \default).clear;
+};
+
 
 ~cleanup = {
     s.newBusAllocators;
@@ -454,12 +501,13 @@ ServerTree.add(~setupSubscription);
 ServerTree.add(~setupOSC);
 // ServerTree.add(~setupMIDI);
 
-ServerBoot.add(~loadBuffers);
-ServerBoot.add(~loadSynths);
-ServerBoot.add(~loadFx);
-ServerBoot.add(~makeSynths);
+ServerTree.add(~loadBuffers);
+ServerTree.add(~loadSynths);
+ServerTree.add(~loadFx);
+ServerTree.add(~makeSynths);
 
 ServerBoot.add(~makeSequences);
+ServerBoot.add(~makePbinds);
 //ServerBoot.add(~makeEvents);
 
 ServerQuit.add(~cleanup);
@@ -495,18 +543,12 @@ s.waitForBoot({
 });
 
 s.doWhenBooted({
-	~setTempo.value(~tempo);
 	~setGain.value(~gain);
-	~setCutoff.value(~hpCutoff, ~lpCutoff);
 	~setLimiter.value(~limiterAmp, ~limiterDur);
-	// ~osc.sendMsg('/done', "awake");
-    s.sync;
-	"done".postln;
+	~setCutoff.value(~hpCutoff, ~lpCutoff);
 
     Synth(\playSample2, [\out, ~masterout, \sample, ~getBuffer.value("control", "startup")]);
-	~mainGroup.set(\gate, 1);
-    // maybe loop here and every 64 bars or something, send a request for new instructions
-    // might stick this up in OSC...?
+	"Ready".postln;
 });
 
 )

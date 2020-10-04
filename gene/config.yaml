@@ -7,10 +7,9 @@ keepFittest: 8
 mutationProb: 0.05
 genes:
     "energy":
-        min: 1
-        max: 12
-        current: 6
-        ste: 1
+        min: 0
+        max: 255
+        current: 128
         round: false
         activates: OnBar
     "vibe":
