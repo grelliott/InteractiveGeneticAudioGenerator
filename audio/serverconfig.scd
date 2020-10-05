@@ -228,10 +228,53 @@ s.options = o;
         // let's just start with adding one and go from there
         //TODO pick instrument at random from grouping
         // pick degree/dur randomly based on vibe/energy bus values
+
+        //infinitSound = getInfiniteSound("nature");
+        // startInfiniteSound(\thunderstorm, \out, reverb)
+        ~startInfiniteSound.value(\thunderstorm, [\out, ~masterout, \amp, 0.85]);
+        //stopInfiniteSounds
+        //stopInifiniteSound(\thunderstorm)
         ~loadInstrument.value(\padsPbind, \voice, ~padsGroup, \amp, 1, \degree, Pseq([1,2,3,4,5,6,7], inf), \dur, Prand([4, 2, 1/4], inf));
+        //unloadInstrument
         ~padsGroup.set(\gate, 1);
         ~bus[\themeBus].set(theme);
     };
+};
+
+~startInfiniteSound = { |name...args|
+    var synthKey = name.asString++"Synth";
+    if (~runningSynths.includesKey(synthKey), { "Already have synth ".post; synthKey.postln; },  {
+        var synth;
+        "Adding ".post; synthKey.postln;
+        synth = Synth.new(name, *args);
+        ~runningSynths.add(synthKey -> synth);
+    });
+};
+
+~replaceInfiniteSound = {|endSynthName, startSynthName...args|
+    var endSynthKey, startSynthKey;
+    endSynthKey = endSynthName++"Synth";
+    startSynthKey = startSynthName++"Synth";
+
+    // ramp down endSynth
+    if (~runningSynths.includesKey(endSynthKey).neg, Nil, {
+        var endSynth = ~runningSynths.at(endSynthName++"Synth");
+        endSynth.set(\amp, Line.kr(endSynth.get(\amp), 0, 4)); //TODO get time for 1 bar
+    });
+
+    // ramp up start startSynth
+
+    ~startSynth.value(startSynthName, args);
+};
+
+~stopInfiniteSound = { |name|
+    var synthKey = name.asString++"Synth";
+    if (~runningSynths.includesKey(synthKey).neg, { "Missing synth ".post; synthKey.postln; },  {
+        "Stoping and removing synth ".post; synthKey.postln;
+        ~runningSynths[synthKey].run(false);
+        ~runningSynths[synthKey].free;
+        ~runningSynths.removeAt(synthKey);
+    });
 };
 
 ~loadInstrument = { |pbind, name, group ... synthArgs|
@@ -403,12 +446,14 @@ s.options = o;
 
 
 ~loadSynths = {
+    ~runningSynths = Dictionary.new();
     ~loadFiles.value(~basePath++"synths/", [
         "kick.scd",
 		"apad_mh.scd",
         "synthbass.scd",
         "ambientpad.scd",
         "voice.scd",
+        "thunderstorm.scd"
     ]);
 };
 
