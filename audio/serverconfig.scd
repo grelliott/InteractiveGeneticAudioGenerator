@@ -453,7 +453,8 @@ s.options = o;
         "synthbass.scd",
         "ambientpad.scd",
         "voice.scd",
-        "thunderstorm.scd"
+        "thunderstorm.scd",
+        "bassogettato.scd"
     ]);
 };
 
