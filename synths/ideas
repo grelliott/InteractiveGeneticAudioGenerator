@@ -1,0 +1,32 @@
+// set up some ambient pads (squeeks, groans, whooshes)
+
+// readme https://theseanco.github.io/howto_co34pt_liveCode/2-1-Recommended-Addons/
+
+// add some clicking sounds (wooden, insecty, metallic)
+// use samples for these
+
+// add some voices (with echo and delay)
+// maybe like those voices from Annihilation
+// or choral-sounding (uplifting)
+
+/*
+ * Look at VST plugins for some fx
+ * for sound FX:
+ * need a very good reverb, with a few parameters
+ * need a good timestretch and pitchbend
+ *
+ * for audio FX:
+ * need a limiter
+ * need an EQ
+ * need a bandpass filter
+ *
+ */
+
+/*
+ * Maybe layer up different samples? Skip the synths for now?
+ * Maybe key samples and play as notes?
+ */
+
+// add some sample playback (through tape stretch, saturation, delay)
+
+// TODO maybe I can create a single reverb and run sends from synths to it and back?
