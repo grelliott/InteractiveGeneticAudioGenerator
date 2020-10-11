@@ -1,8 +1,6 @@
 notes
 *.log
-server.*
-audio/buffers/
-audio/fx/
-audio/synths/
-.venv
+buffers/
+fx/
+synths/
 
